@@ -1,4 +1,4 @@
-# AGENTS.md — opencode-play
+# AGENTS.md — mindvault
 
 ## What this repo is
 

@@ -3,8 +3,8 @@
 ## 环境
 
 - **IDE**: PyCharm Professional 2026.2 (Windows + WSL2)
-- **项目结构**: uv workspace，根模块 `opencode-play`，子模块 `daft-demo`
-- **Python 解释器**: WSL 中的 venv（`~/projects/opencode-play/.venv/bin/python`）
+- **项目结构**: uv workspace，根模块 `mindvault`，子模块 `daft-demo`
+- **Python 解释器**: WSL 中的 venv（`~/projects/mindvault/.venv/bin/python`）
 - **依赖安装**: `uv pip install ray`，venv 的 site-packages 中 `ray` 可正常导入
 
 ## 症状
