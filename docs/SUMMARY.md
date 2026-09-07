@@ -33,3 +33,5 @@
 
 - [探索性学习](learning/README.md)
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)
+  - [de Bruijn 序列](learning/de-bruijn-sequence.md)
+  - [类似 de Bruijn 序列的"专一"算法](learning/specialized-niche-algorithms.md)
