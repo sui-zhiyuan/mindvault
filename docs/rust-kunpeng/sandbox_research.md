@@ -32,33 +32,25 @@
     状态：已合入 Xuanwu 社区（https://gitcode.com/xuanwu/Daft）
 
 2. Portable SIMD 性能库（规划详见 rust-kunpeng.md）
-    我们规划了 xxxx
-    打算做 xxx
-    > 待确认（AI 提问第二组）：
-    > 1. 定位与开源：独立开源项目（对标 Google Highway）还是内部库？计划开源吗？
-        计划开源，对标 highway ， 主要问题是 std::simd 目前没有 stable 计划， 且 std::simd 不能依赖 std::arch ,而我们可以。
-    > 2. 状态：纯规划 / 已有原型代码 / 已有仓库？
-        已经开始实施，尚未对外发布。
-    > 3. 场景：首先服务谁？（Daft 内部用，还是给 lance-linalg / simd-json / simdutf / arrow / polars 提供 SIMD 加速）
-        主要针对 Daft  arrow snap 等场景， 我们当前实施有很多 hardcode asm 的情况， 破坏 rust 安全性， 且存在不同版本cpu 因为支持指令不同导致 core 情况。
-    > 4. 后端优先级：先 NEON 还是先 SVE/SVE2？鲲鹏 SVE 硬件何时可用？
-        看CPU 支持， 如果是 Kunpeng 950 ，则优先 SVE ， 如果是 920 则 使用 neon。
-
-    如果有其他问题， 继续问我。 
+    定位：计划开源，对标 Google Highway；解决 std::simd 无 stable 计划、且不能依赖 std::arch 的痛点。
+    状态：已开始实施，尚未对外发布。
+    动机/场景：Daft / arrow / snap 等场景当前大量 hardcode asm，破坏 Rust 安全性，且不同版本 CPU 指令集差异会导致 core。
+    后端：按 CPU 选择——Kunpeng 950 优先 SVE，920 用 NEON。
 
 3. 标准库优化/使能（详见 rust-kunpeng.md）
-    提供 std::arch 的 sve 支持
-    优化 标准库性能（rustc 仓库自带 benchmark）
-    优化 pyo3 性能
-    > 待确认（AI 提问第二组）：
-    > 5. std::arch SVE 支持：我们具体做了什么？（参与上游 stdarch SVE 合入，还是鲲鹏验证/测试贡献）
-        在 rust 1.95 版本，已经增加了 std::arch 中 arm sve 指令调用。 有合作方（华为 2012 实验室 开发）
-    > 6. 标准库性能：已识别哪些 std/alloc/core 热点？已修复/上游哪些？
-        目前在计划中， 做了一些基础性能测试， 尚未决定优化点。 
-    > 7. PyO3 优化基于哪个场景？（Daft Python 绑定 FFI？通用场景？）优化了哪部分（GIL / 类型转换 / 序列化）？有无 benchmark 数据？
-        针对 PyO3 自身 Benchmark 测试， 目标场景是 Daft ， Lance 。
+    - std::arch SVE 支持：Rust 1.95 已新增 std::arch 的 ARM SVE 指令调用（合作方华为 2012 实验室开发）
+    - 标准库性能：计划中，已做基础性能测试，尚未确定优化点（rustc 仓库自带 benchmark）
+    - PyO3 性能：针对 PyO3 自身 benchmark，目标场景 Daft / Lance
 
-    同样的， 有其他不清楚的， 或者有必要的， 继续追问，知道你全部清晰为止。 
+    > 待确认（AI 提问第三组）：
+    > 1.（Daft/效果）是否有具体性能数据（端到端吞吐提升百分比等）可写进文档？无则保持定性。
+        当前尚未开始优化， 当前Daft 优化还是embed asm 形式， 我们的目标是替换这些 asm
+    > 2.（Portable SIMD）"snap" 具体指哪个项目/库？
+        Daft 依赖的 snap 压缩库
+    > 3.（Portable SIMD）库有仓库/项目名了吗？
+        还没有，内部就较 portable_simd
+    > 4.（PyO3）目前是「已做优化」还是「已测基线、准备优化」？优化方向（GIL/类型转换/序列化）定了吗？
+        规划中， 没有做基线测试。 
 
 ## 当前 沙箱（LLM 安全） 做了哪些？
 
