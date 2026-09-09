@@ -36,6 +36,9 @@
 - [Ascend NPU 架构](ascend-npu/asc-devkit-arch-index.md)
   - [CANN 83RC1 在线文档索引](ascend-npu/hiascend-cann-83rc1-index.md)
 
+- [安全 / 认证](security/README.md)
+  - [Kerberos / GSSAPI 认证机制](security/kerberos-gssapi.md)
+
 - [探索性学习](learning/README.md)
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)
   - [de Bruijn 序列](learning/de-bruijn-sequence.md)

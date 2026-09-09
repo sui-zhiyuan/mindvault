@@ -53,6 +53,58 @@ target/                 ← mdBook build output (gitignored)
   an entry to `docs/SUMMARY.md` (following mdBook SUMMARY conventions), so it is
   retrievable later.
 
+### Knowledge note template (standard structure)
+
+Every knowledge note under `docs/` MUST follow this fixed section structure.
+Section names are canonical fixed strings so cross-note searches stay reliable
+(e.g. `grep "^## 延伸" docs/ -r`). Empty sections are omitted, never left as
+placeholder headers.
+
+Directory placement follows the topic-based top-level layout (e.g. `docs/security/`),
+created lazily; each topic dir gets a `README.md` landing page plus a `docs/SUMMARY.md`
+entry.
+
+````markdown
+# <Topic Name>
+
+> 更新：YYYY-MM-DD
+
+## 简介
+What it is / what problem it solves, 3–5 sentences.
+(Optional one line) Prerequisites: … / Related: [note](../xx/yy.md)
+
+## 术语列表
+| Term | Full Name | Meaning |
+List only abbreviations used in this note (≤10 rows).
+
+## 核心内容
+### <Sub-topic 1>     ← must break into named subsections
+### <Sub-topic 2>
+
+## 延伸             ← omit section if empty
+Content beyond the core, related but worth recording; organize in named ### subsections
+(ops/config, troubleshooting, related applications, related topics, etc.).
+
+## Q&A              ← omit section if empty
+Each entry = one question + a 1–3 sentence answer.
+
+## 参考资料
+Links + access date.
+````
+
+### Note content rules
+
+- **Language**: notes are written primarily in Chinese (zh-CN). English is allowed
+  only where necessary — e.g. term full names (`Generic Security Services API`),
+  protocol/message identifiers, or quoting original wording.
+- **No sensitive info**: notes MUST NOT contain security-sensitive private data —
+  keys (private keys, tokens, secrets, API keys), passwords, usernames / account
+  names, real IP addresses (especially public ones), internal hostnames / FQDNs,
+  or real infrastructure addresses (KDC / server addresses).
+- **Redaction style**: when an example needs a host or address, use realistic
+  placeholders such as `192.168.x.x` or `example.com` — not abstract ones like
+  `<目标服务器>` — so examples stay concrete and readable.
+
 ### User knowledge profile (goal)
 
 - Intended behavior: when answering, consult the profile first and skip topics
