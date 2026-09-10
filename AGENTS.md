@@ -6,6 +6,8 @@
 
 1. **Long-term memory** — persist analysis results as notes under `docs/` so a
    future session retrieves them directly instead of re-generating from scratch.
+   Notes are written **only when the user asks for them** (see "Long-term memory"
+   under Rules for agents) — agents answer in-conversation by default.
 2. **User knowledge profile (goal, not yet implemented)** — record what the user
    already knows vs. doesn't know. When explaining something, consult this
    profile first and skip topics the user already understands, expanding only on
@@ -45,13 +47,20 @@ target/                 ← mdBook build output (gitignored)
 
 ## Rules for agents
 
-### Long-term memory (implemented)
+### Long-term memory (ask first — never auto-write)
 
 - Before researching a topic, scan `docs/` for existing notes and reuse what is
   already there.
-- After completing analysis, persist the result as a note under `docs/` and add
-  an entry to `docs/SUMMARY.md` (following mdBook SUMMARY conventions), so it is
-  retrievable later.
+- After completing analysis, **do NOT create or modify anything under `docs/` on
+  your own initiative.** Answer the user in the conversation first, then *offer*
+  to persist the result: propose the note (topic, target path, whether an
+  existing note should be extended instead) and ask the user to confirm.
+- Write the note, create directories, and add the `docs/SUMMARY.md` entry
+  (following mdBook SUMMARY conventions) **only after the user explicitly
+  agrees**. If the user declines or does not answer, leave the repo untouched —
+  the in-conversation answer is sufficient.
+- No unsolicited notes, no unsolicited `docs/SUMMARY.md` edits, no unsolicited
+  edits to existing notes.
 
 ### Knowledge note template (standard structure)
 
