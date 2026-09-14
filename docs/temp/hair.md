@@ -19,27 +19,28 @@
 目标：让数据工程与 AI 推理训练在鲲鹏上跑出极致性能，全面对标并超越友商。
 
 领域开源代码仓：
-cinderx jit加速：https://gitcode.com/openeuler/cinderx
-torch npu加速：https://gitcode.com/Ascend/pytorch
-numpy：https://gitcode.com/boostkit/numpy
-pandas：https://gitcode.com/boostkit/pandas
-daft: https://gitcode.com/xuanwu/Daft
-snap: https://gitcode.com/xuanwu/snap
-rust-bench：https://gitcode.com/xuanwu/rust-bench
-triton-cpu: https://atomgit.com/openeuler/triton-cpu
+
+- cinderx jit加速：https://gitcode.com/openeuler/cinderx
+- torch npu加速：https://gitcode.com/Ascend/pytorch
+- numpy：https://gitcode.com/boostkit/numpy
+- pandas：https://gitcode.com/boostkit/pandas
+- daft: https://gitcode.com/xuanwu/Daft
+- snap: https://gitcode.com/xuanwu/snap
+- rust-bench：https://gitcode.com/xuanwu/rust-bench
+- triton-cpu: https://atomgit.com/openeuler/triton-cpu
 
 
 ## 我们的优势
-从芯片到业务的全栈视野，真正动手改 Kernel、Compiler、Runtime
-面向互联网 TOP 客户的真实场景
-Python / Rust 双语言生态深度自研（华为 Python / Rust 开源社区核心贡献）
-上海、杭州、东莞多地可选
+1. 从芯片到业务的全栈视野，真正动手改 Kernel、Compiler、Runtime
+2. 面向互联网 TOP 客户的真实场景
+3. Python / Rust 双语言生态深度自研（华为 Python / Rust 开源社区核心贡献）
+4. 上海、杭州、东莞多地可选
 
 ## 我们需要这样的你
-扎实的系统软件功底（OS / Compiler / 架构 / 网络存储协议）
-对性能优化有执念，习惯用数据说话
-有 Rust / C / C++ / Python 底层开发经验
-了解 AI 框架或 RDMA 网络加分
+1. 扎实的系统软件功底（OS / Compiler / 架构 / 网络存储协议）
+2. 对性能优化有执念，习惯用数据说话
+3. 有 Rust / C / C++ / Python 底层开发经验
+4. 了解 AI 框架或 RDMA 网络加分
 
 -----------------------------------------------
 
@@ -52,6 +53,7 @@ Python / Rust 双语言生态深度自研（华为 Python / Rust 开源社区核
 支持自定义报文解析、流表 Key/Action、自定义 Pipeline、RDMA 拥塞控制算法以及存储协议卸载等能力，持续释放 DPU 硬件算力。
 
 FlexDA已面向所有开发者发布，欢迎了解：
+
 https://www.hikunpeng.com/cn/dakit/flexda
 
 
@@ -63,5 +65,6 @@ https://www.hikunpeng.com/cn/dakit/flexda
 等高性能 Runtime 能力。
 
 领域开源代码仓：
-CANN driver：https://gitcode.com/cann/driver
-CANN runtime：https://gitcode.com/cann/runtime
+
+- CANN driver：https://gitcode.com/cann/driver
+- CANN runtime：https://gitcode.com/cann/runtime
