@@ -16,6 +16,7 @@
   - [Daft Kunpeng 性能优化设计](rust-kunpeng/daft-kunpeng-perf-design-spec.md)
   - [Daft Kunpeng 总体设计需求分析](rust-kunpeng/daft-kunpeng-overall-design.md)
   - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
+  - [Pipeline B：MinHash-LSH 模糊去重](rust-kunpeng/pipeline-b-minhash-lsh.md)
   - [Daft 项目最新动态](rust-kunpeng/daft-latest-developments.md)
   - [sched_ext 调度器全景分析](rust-kunpeng/scx-schedulers.md)
   - [Rust 生态 Kunpeng 亲和远期规划](rust-kunpeng/rust_kunpeng_planning_outline.md)
