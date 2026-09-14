@@ -324,6 +324,13 @@ TASK=pipeline_text_minhash_lsh_dedup PROFILE_NAME=smoke bash scripts/pipelines/r
 `outputs/pipeline_b_data/run-<time_ns>/deduped/`。注意该 task **未登记**在
 `configs/pipelines/formal_pipelines.json`，`run_pipeline.sh` 会告警并退化为只跑 `daft_ray`。
 
+### 12. 汇报用幻灯片
+
+同内容的 8 页汇报版：`docs/rust-kunpeng/slides/pipeline-b-flow.html`（单文件、零外部引用，
+浏览器直接打开，`←` `→` 翻页、`F` 全屏）。页面口径与本文一致：第 1 页封面、第 2 页输入输出契约、
+第 3 页主流程图、第 4 页 LSH 撞中概率、第 5 页业务含义、第 6 页工程动机与背景读数、第 7 页四个缺口、
+第 8 页优化分支与小结。
+
 ## 延伸
 
 ### 与其他候选 pipeline 的关系

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline B：MinHash-LSH 模糊去重 — 执行流程</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --fg:#e8ecf5; --muted:#8c98b0;
+    --line:#28324a; --accent:#3d7eff; --accent2:#e0a340;
+    --ok:#3ecf8e; --warn:#f2705f;
+    --serif:'Songti SC','SimSun',Georgia,serif;
+    --sans:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+    --mono:'DejaVu Sans Mono',Consolas,'Courier New',monospace;
+  }
+  html,body{margin:0;height:100%;background:#05070c;font-family:var(--sans);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .canvas{width:1280px;height:720px;position:relative;transform-origin:center center;flex:0 0 auto;}
+  .slide{position:absolute;inset:0;background:var(--bg);color:var(--fg);
+         opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;}
+
+  /* ---------- 页眉 ---------- */
+  .s-head{padding:34px 56px 0;}
+  .s-kicker{font-size:15px;letter-spacing:.14em;color:var(--accent);font-weight:600;}
+  .s-title{font-size:31px;line-height:1.35;margin:9px 0 0;font-weight:600;}
+  .s-sub{font-size:16px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .body{padding:0 56px;}
+
+  /* ---------- 通用 ---------- */
+  .mono,code{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .num{font-variant-numeric:tabular-nums;}
+  .hi{color:var(--accent);}
+  .amber{color:var(--accent2);}
+  .ok{color:var(--ok);}
+  .bad{color:var(--warn);}
+  .cols{display:flex;gap:22px;}
+  .col{flex:1;min-width:0;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .card + .card{margin-top:14px;}
+  .card h3{margin:0 0 10px;font-size:17px;font-weight:600;letter-spacing:.01em;}
+  ul{margin:0;padding-left:19px;}
+  li{font-size:16px;line-height:1.6;margin:6px 0;}
+  li:first-child{margin-top:0;}
+  p{margin:0;font-size:16px;line-height:1.6;}
+  .muted{color:var(--muted);}
+
+  /* ---------- 封面 ---------- */
+  .cover{padding:0 56px;display:flex;flex-direction:column;justify-content:center;height:100%;}
+  .badge{width:max-content;font-size:14px;font-weight:600;color:var(--accent);
+         border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 15px;}
+  .cover h1{font-size:44px;line-height:1.28;margin:20px 0 0;font-weight:600;letter-spacing:-.01em;}
+  .cover .lead{margin-top:16px;font-size:17px;line-height:1.65;color:var(--muted);max-width:1050px;}
+  .metrics{display:flex;gap:12px;margin-top:30px;}
+  .metric{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 15px;}
+  .m-val{font-size:27px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.1;}
+  .metric.a2 .m-val{color:var(--accent2);}
+  .m-lab{font-size:13px;color:var(--muted);margin-top:7px;line-height:1.45;}
+
+  /* ---------- 指标条 / 结论横条 ---------- */
+  .verdict{position:absolute;left:56px;right:56px;bottom:52px;border-left:3px solid var(--accent);
+           background:var(--panel);border-radius:0 8px 8px 0;padding:11px 18px;display:flex;gap:14px;align-items:baseline;}
+  .v-label{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.1em;flex:0 0 auto;}
+  .v-text{font-size:15.5px;line-height:1.55;color:var(--fg);}
+  .pageno{position:absolute;right:56px;bottom:20px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  /* ---------- 表格 ---------- */
+  table{border-collapse:collapse;width:100%;table-layout:fixed;}
+  th,td{text-align:left;vertical-align:top;padding:8px 11px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.5;}
+  thead th{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.06em;background:rgba(255,255,255,.02);}
+  tbody th{font-weight:600;color:var(--fg);}
+  table.xw th.c1{border-top:2px solid var(--accent);}
+  table.xw th.c2{border-top:2px solid var(--accent2);}
+  td .mono{font-size:13.5px;color:#a9c4ff;}
+
+  /* ---------- 指标卡（对照表替代） ---------- */
+  .kv{display:flex;gap:10px;flex-wrap:wrap;}
+  .kv div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:7px;padding:7px 11px;font-size:14px;}
+
+  /* ---------- 步骤条 ---------- */
+  .strip{display:flex;align-items:stretch;}
+  .strip .s{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 12px;
+            display:flex;flex-direction:column;justify-content:center;}
+  .strip .s .n{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;}
+  .strip .s .t{font-size:15.5px;font-weight:600;margin-top:7px;line-height:1.45;}
+  .strip .s .d{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.45;}
+  .strip .a{display:flex;align-items:center;color:var(--line);font-size:18px;padding:0 8px;}
+  .strip .s.hot{border-color:#5c4a22;}
+  .strip .s.hot .n{color:var(--accent2);}
+
+  /* ---------- 概率条 ---------- */
+  .bar-track{height:9px;background:#212a40;border-radius:5px;margin-top:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent2);border-radius:5px;}
+  .formula{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--accent2);
+           background:rgba(224,163,64,.08);border:1px solid #5c4a22;border-radius:9px;padding:11px 15px;width:max-content;}
+
+  /* ---------- 8 个 band 小卡 ---------- */
+  .bands{display:grid;grid-template-columns:repeat(4,1fr);gap:9px 11px;}
+  .band{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent2);
+        border-radius:7px;padding:9px 11px;}
+  .band .h{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--accent2);}
+  .band .o{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:5px;}
+
+  /* ---------- 流程图 SVG ---------- */
+  svg.flow{display:block;width:100%;height:auto;}
+  svg.flow text{font-family:var(--sans);fill:var(--fg);}
+  svg.flow .mono{font-family:var(--mono);fill:#a9c4ff;}
+  svg.flow .bt{font-size:15px;font-weight:600;}
+  svg.flow .st{font-size:12.5px;fill:var(--muted);}
+  svg.flow .cd{font-family:var(--mono);font-size:11.5px;fill:#a9c4ff;}
+  svg.flow .lb{font-size:14px;font-weight:600;}
+  svg.flow .bx{fill:var(--panel);stroke:var(--line);stroke-width:1.5;}
+  svg.flow .bx-a1{stroke:var(--accent);}
+  svg.flow .bx-a2{stroke:var(--accent2);}
+  svg.flow .bx-ok{stroke:var(--ok);}
+  svg.flow .ln{stroke:#4a5876;stroke-width:1.8;fill:none;}
+  svg.flow .lns{stroke:#38425c;stroke-width:1.5;fill:none;}
+  svg.flow .sig{fill:var(--accent);}
+  svg.flow .pill{fill:rgba(224,163,64,.12);stroke:#5c4a22;stroke-width:1.5;}
+
+  /* ---------- 导航 ---------- */
+  .nav{position:fixed;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:9px;z-index:20;}
+  .nav .dot{width:7px;height:7px;border-radius:50%;background:#2b3550;cursor:pointer;transition:.2s;}
+  .nav .dot.on{background:var(--accent);transform:scale(1.3);}
+  .hint{position:fixed;right:16px;bottom:11px;font-size:12px;color:#3f4a66;z-index:20;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="canvas" id="canvas">
+
+    <!-- ==================== 1 · 封面 ==================== -->
+    <section class="slide active" id="s1">
+      <div class="cover">
+        <div class="badge">volc_operator_sim · 候选 Pipeline B · commit 02b65df</div>
+        <h1>Pipeline B：MinHash-LSH 模糊去重</h1>
+        <p class="lead">业务：大规模训练语料的<b>近似重复文档删除</b>。工程：MinHash、LSH banding、groupby、join、
+          Parquet I/O <b>全部由 Daft 原生算子完成，物理计划中 Python UDF 节点为 0</b>。</p>
+        <div class="metrics">
+          <div class="metric"><div class="m-val">2 → 4</div><div class="m-lab">输入列 → 输出列</div></div>
+          <div class="metric a2"><div class="m-val">8×</div><div class="m-lab">每篇文档展开成 8 个 band</div></div>
+          <div class="metric a2"><div class="m-val">2</div><div class="m-lab">次全局 shuffle</div></div>
+          <div class="metric"><div class="m-val">0</div><div class="m-lab">Python UDF 节点</div></div>
+          <div class="metric"><div class="m-val">18.95%</div><div class="m-lab">Rust CPU 占比（Pipeline A 为 2.65%）</div></div>
+        </div>
+      </div>
+      <div class="pageno">1 / 8</div>
+    </section>
+
+    <!-- ==================== 2 · 输入输出契约 ==================== -->
+    <section class="slide" id="s2">
+      <header class="s-head">
+        <div class="s-kicker">输入与输出契约</div>
+        <h2 class="s-title">数据源预期：两列，别的都不要</h2>
+      </header>
+      <div class="body" style="margin-top:18px">
+        <div class="cols">
+          <div class="col">
+            <div class="card">
+              <h3>输入 · <span class="mono muted">parquet / lance</span></h3>
+              <table>
+                <colgroup><col style="width:104px"><col style="width:62px"><col></colgroup>
+                <tbody>
+                  <tr><th class="mono">doc_id</th><td class="muted">string</td><td>主键：代表选择、join 键、去重依据</td></tr>
+                  <tr><th class="mono">text</th><td class="muted">string</td><td>已抽好正文的原始文本</td></tr>
+                </tbody>
+              </table>
+              <p class="muted" style="margin-top:11px;font-size:14.5px">读取后立刻校验，缺列 loud fail：
+                <span class="mono">ValueError("schema missing")</span></p>
+            </div>
+            <div class="card">
+              <h3>从哪里输入</h3>
+              <ul>
+                <li>任务声明 <span class="mono">fixtures/pipeline_b/documents.parquet</span></li>
+                <li>路径由 <span class="mono">resolve_task_input()</span> 解析后传入，pipeline 自己不读 JSON</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <h3>输出 · deduped parquet（4 列）</h3>
+              <table>
+                <colgroup><col style="width:150px"><col></colgroup>
+                <tbody>
+                  <tr><th class="mono">doc_id</th><td>被保留文档的主键</td></tr>
+                  <tr><th class="mono">normalized_text</th><td>规范化后文本</td></tr>
+                  <tr><th class="mono">minhash_signature</th><td>64 维签名，便于复现</td></tr>
+                  <tr><th class="mono">component_rep</th><td>所属分量代表 ID（= 本行 doc_id）</td></tr>
+                </tbody>
+              </table>
+              <p class="muted" style="margin-top:11px;font-size:14.5px">
+                <span class="mono">outputs/pipeline_b_data/run-&lt;time_ns&gt;/deduped/</span>
+                · snappy · 每次运行新目录</p>
+            </div>
+            <div class="card" style="border-color:#5a3030">
+              <h3>输出里没有的 <span class="bad">（重要）</span></h3>
+              <ul>
+                <li><b>原始 <span class="mono">text</span> 列被丢掉</b>，只留规范化文本</li>
+                <li>没有被删除清单、没有 dedup 统计、没有 Lance 入湖</li>
+                <li><span class="mono">candidate_buckets</span> 恒为 <span class="mono">None</span>，逐算子耗时为空 → 只有端到端耗时</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">契约极简（两列进、四列出），上游位置是 <b>web 正文抽取之后、tokenizer 之前</b>；但它丢掉了原始文本，也没有任何去重计数。</div>
+      </footer>
+      <div class="pageno">2 / 8</div>
+    </section>
+
+    <!-- ==================== 3 · 主流程 ==================== -->
+    <section class="slide" id="s3">
+      <header class="s-head">
+        <div class="s-kicker">主流程</div>
+        <h2 class="s-title">parquet 文档 → 去重结果：7 步一条数据流</h2>
+      </header>
+      <div class="body" style="margin-top:8px">
+        <svg class="flow" viewBox="0 0 1168 452" role="img" aria-label="Pipeline B 执行流程">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#4a5876"/></marker>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#38425c"/></marker>
+          </defs>
+
+          <!-- ---------- row 1 ---------- -->
+          <circle cx="7" cy="6" r="5" fill="#3d7eff"/>
+          <text class="lb" x="22" y="11">文本规范化</text>
+          <text class="st" x="122" y="11">3 个原生字符串表达式 · 1 行 → 1 行</text>
+
+          <rect class="bx bx-a1" x="0" y="26" width="196" height="100" rx="9"/>
+          <text class="bt" x="16" y="50">documents.parquet</text>
+          <text class="cd" x="16" y="72">doc_id : string</text>
+          <text class="cd" x="16" y="90">text&#160;&#160;&#160;: string</text>
+          <text class="st" x="16" y="112">web 正文抽取后的语料</text>
+
+          <line class="ln" x1="202" y1="76" x2="232" y2="76" marker-end="url(#a1)"/>
+
+          <rect class="bx" x="238" y="26" width="222" height="100" rx="9"/>
+          <text class="bt" x="254" y="50">规范化 + 空行过滤</text>
+          <text class="cd" x="254" y="72">regexp_replace(\s+ → " ")</text>
+          <text class="st" x="254" y="92">lower → strip → 空白折叠</text>
+          <text class="st" x="254" y="112">丢掉 null / 空串行</text>
+
+          <line class="ln" x1="466" y1="76" x2="496" y2="76" marker-end="url(#a1)"/>
+
+          <rect class="bx" x="502" y="26" width="222" height="100" rx="9"/>
+          <text class="bt" x="518" y="50">MinHash 签名</text>
+          <text class="st" x="518" y="70">64 个哈希值近似 n-gram 集合</text>
+          <g class="sig">
+            <rect x="518" y="78" width="6" height="12" rx="1.5"/><rect x="526" y="78" width="6" height="12" rx="1.5"/><rect x="534" y="78" width="6" height="12" rx="1.5"/><rect x="542" y="78" width="6" height="12" rx="1.5"/><rect x="550" y="78" width="6" height="12" rx="1.5"/><rect x="558" y="78" width="6" height="12" rx="1.5"/><rect x="566" y="78" width="6" height="12" rx="1.5"/><rect x="574" y="78" width="6" height="12" rx="1.5"/><rect x="582" y="78" width="6" height="12" rx="1.5"/><rect x="590" y="78" width="6" height="12" rx="1.5"/><rect x="598" y="78" width="6" height="12" rx="1.5"/><rect x="606" y="78" width="6" height="12" rx="1.5"/><rect x="614" y="78" width="6" height="12" rx="1.5"/><rect x="622" y="78" width="6" height="12" rx="1.5"/><rect x="630" y="78" width="6" height="12" rx="1.5"/><rect x="638" y="78" width="6" height="12" rx="1.5"/>
+          </g>
+          <text class="cd" x="518" y="106">minhash(num_hashes=64, ngram_size=5, seed=1)</text>
+          <text class="st" x="518" y="120">签名一致率 ≈ Jaccard 相似度</text>
+
+          <line class="ln" x1="730" y1="76" x2="760" y2="76" marker-end="url(#a1)"/>
+
+          <!-- pill stack -->
+          <rect class="bx bx-a2" x="766" y="10" width="402" height="132" rx="9" stroke-dasharray="6 4"/>
+          <text class="lb" x="782" y="32" style="fill:#e0a340">LSH banding：8 个 band，每 band 8 个值</text>
+          <text class="st" x="782" y="50">原生 slice + hash + explode → 数据膨胀 8×</text>
+          <g>
+            <rect class="pill" x="782" y="58" width="112" height="17" rx="4"/><text class="cd" x="789" y="70.5" style="font-size:10px">band 0 · sig[0:8]</text>
+            <rect class="pill" x="900" y="58" width="112" height="17" rx="4"/><text class="cd" x="907" y="70.5" style="font-size:10px">band 1 · sig[8:16]</text>
+            <rect class="pill" x="1018" y="58" width="112" height="17" rx="4"/><text class="cd" x="1025" y="70.5" style="font-size:10px">band 2 · sig[16:24]</text>
+            <rect class="pill" x="782" y="79" width="112" height="17" rx="4"/><text class="cd" x="789" y="91.5" style="font-size:10px">band 3 · sig[24:32]</text>
+            <rect class="pill" x="900" y="79" width="112" height="17" rx="4"/><text class="cd" x="907" y="91.5" style="font-size:10px">band 4 · sig[32:40]</text>
+            <rect class="pill" x="1018" y="79" width="112" height="17" rx="4"/><text class="cd" x="1025" y="91.5" style="font-size:10px">band 5 · sig[40:48]</text>
+            <rect class="pill" x="782" y="100" width="112" height="17" rx="4"/><text class="cd" x="789" y="112.5" style="font-size:10px">band 6 · sig[48:56]</text>
+            <rect class="pill" x="900" y="100" width="112" height="17" rx="4"/><text class="cd" x="907" y="112.5" style="font-size:10px">band 7 · sig[56:64]</text>
+          </g>
+          <text class="cd" x="1018" y="110">→ (doc_id, band_idx, h)</text>
+          <text class="st" x="1018" y="126">1 篇文档 → 8 行</text>
+
+          <!-- ---------- row 2 ---------- -->
+          <line x1="0" y1="162" x2="1168" y2="162" stroke="#28324a" stroke-width="1"/>
+          <circle cx="7" cy="190" r="5" fill="#e0a340"/>
+          <text class="lb" x="22" y="195">候选分组与代表传播</text>
+          <text class="st" x="196" y="195">两次全局 shuffle：2 次 groupby + 1 次 join</text>
+
+          <path class="ln" d="M966 146 C 966 168 966 170 966 192" stroke-dasharray="6 4" marker-end="url(#a1)"/>
+
+          <rect class="bx bx-a2" x="0" y="206" width="330" height="108" rx="9"/>
+          <text class="bt" x="16" y="230">① 桶代表</text>
+          <text class="cd" x="16" y="252">groupby(band_idx, band_hash)</text>
+          <text class="cd" x="16" y="270">→ agg(doc_id.min() = band_rep)</text>
+          <text class="st" x="16" y="292">一个桶 = 一批互相疑似重复的文档</text>
+          <text class="st" x="16" y="308">桶键含 band_idx，跨段不会误并</text>
+
+          <line class="ln" x1="336" y1="260" x2="366" y2="260" marker-end="url(#a1)"/>
+
+          <rect class="bx bx-a2" x="372" y="206" width="374" height="108" rx="9"/>
+          <text class="bt" x="388" y="230">② 分量标签</text>
+          <text class="cd" x="388" y="252">expanded join band_representatives</text>
+          <text class="cd" x="388" y="270">→ groupby(doc_id).agg(band_rep.min())</text>
+          <text class="st" x="388" y="292">一篇文档命中多个桶时取最小代表</text>
+          <text class="st" x="388" y="308">→ 一维「连通分量标签」</text>
+
+          <line class="ln" x1="752" y1="260" x2="782" y2="260" marker-end="url(#a1)"/>
+
+          <rect class="bx bx-ok" x="788" y="206" width="380" height="108" rx="9"/>
+          <text class="bt" x="804" y="230">③ 选出保留行</text>
+          <text class="cd" x="804" y="252">join(labels, on="doc_id")</text>
+          <text class="cd" x="804" y="270">→ where(doc_id == component_rep)</text>
+          <text class="st" x="804" y="292">每分量恰好保留 1 行</text>
+          <text class="st" x="804" y="308">输出行数 = 分量数</text>
+
+          <!-- ---------- row 3 ---------- -->
+          <line x1="0" y1="332" x2="1168" y2="332" stroke="#28324a" stroke-width="1"/>
+          <circle cx="7" cy="360" r="5" fill="#3ecf8e"/>
+          <text class="lb" x="22" y="365">落盘与验收</text>
+
+          <rect class="bx bx-ok" x="0" y="376" width="1140" height="62" rx="9"/>
+          <text class="cd" x="18" y="400">write_parquet(run-&lt;time_ns&gt;/deduped, snappy)</text>
+          <text class="cd" x="392" y="400">→ read_parquet(**/*.parquet).count_rows()</text>
+          <text class="cd" x="800" y="400">→ explain() 断言 0 个 Python UDF</text>
+          <text class="st" x="18" y="424">先落盘再回读：避免每个 action 重跑整条 MinHash + 8-band + shuffle 计划</text>
+        </svg>
+      </div>
+      <footer class="verdict" style="bottom:44px">
+        <div class="v-label">结论</div>
+        <div class="v-text">7 步里没有任何逐行 Python 计算——循环只按固定的 band 数展开计划结构，<b>业务计算全部落在 Daft 的 Rust 引擎</b>。</div>
+      </footer>
+      <div class="pageno">3 / 8</div>
+    </section>
+
+    <!-- ==================== 4 · LSH 为什么有效 ==================== -->
+    <section class="slide" id="s4">
+      <header class="s-head">
+        <div class="s-kicker">LSH 的关键一步</div>
+        <h2 class="s-title">为什么 8 个 band 就能省掉全量两两比较</h2>
+        <div class="s-sub">只在「至少有一段完全相同」的文档之间比较；相似度越高越容易撞中，8 段并列是为了把「只撞一两段」的小概率也接住。</div>
+      </header>
+      <div class="body" style="margin-top:14px">
+        <div class="cols">
+          <div class="col" style="flex:1.35">
+            <div class="bands">
+              <div class="band"><div class="h">band 0｜sig[0:8]</div><div class="o">hash → (doc_id, 0, h₀)</div></div>
+              <div class="band"><div class="h">band 1｜sig[8:16]</div><div class="o">hash → (doc_id, 1, h₁)</div></div>
+              <div class="band"><div class="h">band 2｜sig[16:24]</div><div class="o">hash → (doc_id, 2, h₂)</div></div>
+              <div class="band"><div class="h">band 3｜sig[24:32]</div><div class="o">hash → (doc_id, 3, h₃)</div></div>
+              <div class="band"><div class="h">band 4｜sig[32:40]</div><div class="o">hash → (doc_id, 4, h₄)</div></div>
+              <div class="band"><div class="h">band 5｜sig[40:48]</div><div class="o">hash → (doc_id, 5, h₅)</div></div>
+              <div class="band"><div class="h">band 6｜sig[48:56]</div><div class="o">hash → (doc_id, 6, h₆)</div></div>
+              <div class="band"><div class="h">band 7｜sig[56:64]</div><div class="o">hash → (doc_id, 7, h₇)</div></div>
+            </div>
+            <div class="card" style="margin-top:13px">
+              <h3>Python 循环不是 UDF</h3>
+              <p class="muted" style="font-size:15px">循环次数只取决于配置的 <span class="mono">bands</span>，与数据行数无关——它只展开<b>固定的 lazy plan 结构</b>；
+                <span class="mono">slice</span> 与 <span class="mono">hash</span> 都是原生表达式。</p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="border-color:#5c4a22">
+              <h3 class="amber">撞中概率（这就是实际阈值）</h3>
+              <div class="formula">P(s) = 1 − (1 − s⁸)⁸</div>
+              <div style="margin-top:15px">
+                <div class="mono num" style="font-size:14px">s = 0.9　→　95%</div>
+                <div class="bar-track"><div class="bar-fill" style="width:95%"></div></div>
+                <div class="mono num" style="font-size:14px;margin-top:11px">s = 0.8　→　61%</div>
+                <div class="bar-track"><div class="bar-fill" style="width:61%"></div></div>
+                <div class="mono num" style="font-size:14px;margin-top:11px">s = 0.5　→　3%</div>
+                <div class="bar-track"><div class="bar-fill" style="width:3%"></div></div>
+              </div>
+              <p class="muted" style="margin-top:14px;font-size:14.5px">fixture 注入的近似重复正是 <span class="mono">s ≈ 0.9</span>，
+                所以模糊合并会被稳定触发；精确重复（<span class="mono">s = 1</span>）100% 相撞。</p>
+            </div>
+            <div class="card">
+              <h3>代价</h3>
+              <ul>
+                <li>数据膨胀 <b>8 倍</b>，多两次全局 shuffle</li>
+                <li>band 越多：召回越高、误报越多</li>
+                <li><span class="mono">num_hashes</span> 必须能被 <span class="mono">bands</span> 整除</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">参数（64 哈希 / 8 band）本身就是相似度阈值：<b>≈0.9 相似度的文档有 95% 概率被判为重复，0.5 的只有 3%</b>。</div>
+      </footer>
+      <div class="pageno">4 / 8</div>
+    </section>
+
+    <!-- ==================== 5 · 业务与输出 ==================== -->
+    <section class="slide" id="s5">
+      <header class="s-head">
+        <div class="s-kicker">业务含义</div>
+        <h2 class="s-title">它到底在解决什么问题、留下什么产物</h2>
+      </header>
+      <div class="body" style="margin-top:16px">
+        <div class="cols">
+          <div class="col">
+            <div class="card">
+              <h3>业务场景：预训练语料的近似去重</h3>
+              <ul>
+                <li>精确去重只能删「逐字相同」的文档；web 语料更常见的是转载、模板微调、行尾差异</li>
+                <li>重复会让模型记忆并复述训练样本，损害泛化，也让评测被污染</li>
+                <li>白烧 token 预算，且不产生任何新增信息</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>保留策略</h3>
+              <ul>
+                <li>每个分量取<b>字典序最小的 <span class="mono">doc_id</span></b>，fixture 里约等于最靠前那篇</li>
+                <li>同一规则在 <span class="mono">band_rep</span> / <span class="mono">component_rep</span> / 保留判断三处复用</li>
+                <li>想改成按质量分保留，只需替换这几处聚合表达式</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <h3>产物与验收</h3>
+              <ul>
+                <li>写出 4 列 deduped parquet，并回读计数校验完整性</li>
+                <li>指标含 <span class="mono">input_rows</span> / <span class="mono">output_rows</span> / <span class="mono">readback_rows</span> 与零 UDF 不变量</li>
+                <li>零 UDF 是<b>硬断言</b>：物理计划出现 UDF 标记直接 <span class="mono">AssertionError</span></li>
+              </ul>
+            </div>
+            <div class="card" style="border-color:#5a3030">
+              <h3 class="bad">它无法自证「去重生效」</h3>
+              <p style="font-size:15px">每篇文档至少属于一个 band，孤立文档也会被保留，所以<b>输出行数恒等于分量数、永远非空</b>。
+                仓库对同类任务的 golden 合同是 <span class="mono">has_kept_and_dropped</span>（必须既有保留又有剔除），本 pipeline 自身没有这个保护。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">业务上它回答「哪些文档近似重复」，但<b>不回答「删了多少」</b>——别把「跑通」当成「去重有效」。</div>
+      </footer>
+      <div class="pageno">5 / 8</div>
+    </section>
+
+    <!-- ==================== 6 · 工程动机 ==================== -->
+    <section class="slide" id="s6">
+      <header class="s-head">
+        <div class="s-kicker">工程动机</div>
+        <h2 class="s-title">这条 pipeline 真正要证明的事</h2>
+      </header>
+      <div class="body" style="margin-top:22px">
+        <div class="strip">
+          <div class="s"><div class="n">STEP 1</div><div class="t">把可关系化的部分<br>下推给 Daft</div></div>
+          <div class="a">›</div>
+          <div class="s"><div class="n">STEP 2</div><div class="t">物理计划里<br>Python UDF = 0</div></div>
+          <div class="a">›</div>
+          <div class="s hot"><div class="n">STEP 3</div><div class="t">用 8× 数据膨胀<br>放大 Rust 计算窗口</div></div>
+          <div class="a">›</div>
+          <div class="s"><div class="n">STEP 4</div><div class="t">perf 采样<br>采得到东西</div></div>
+          <div class="a">›</div>
+          <div class="s"><div class="n">STEP 5</div><div class="t">建立跨架构<br>x86 ↔ 鲲鹏基线</div></div>
+        </div>
+        <div class="cols" style="margin-top:22px">
+          <div class="col">
+            <div class="card">
+              <h3>背景读数（100 行输入 · 单机 3-NUMA 模拟 Ray 集群）</h3>
+              <table class="xw">
+                <colgroup><col style="width:150px"><col><col style="width:110px"></colgroup>
+                <thead><tr><th class="c1">产线</th><th class="c1">实现特征</th><th class="c2">Rust CPU 占比</th></tr></thead>
+                <tbody>
+                  <tr><th>Pipeline A</th><td>精确去重，一次 groupby + join</td><td class="amber num">2.65%</td></tr>
+                  <tr><th>Pipeline B</th><td>8× 膨胀 + 两次 groupby + join</td><td class="ok num">18.95%</td></tr>
+                  <tr><th>Pipeline C</th><td>模型评测，多表 join + coverage</td><td class="num">1.84%</td></tr>
+                  <tr><th>原始文本产线</th><td>大量 Python UDF</td><td class="bad num">0.91%</td></tr>
+                </tbody>
+              </table>
+              <p class="muted" style="margin-top:10px;font-size:14px">Rust 占比是 exclusive active CPU sample share，不是墙钟占比。</p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <h3>为什么不做并行扩展</h3>
+              <ul>
+                <li>sweep 实验的结构性结论：<b>minhash 去重 α ≈ 1.0</b>，<b>N* = 1</b>，切分区净亏损</li>
+                <li>瓶颈是全局 shuffle / barrier，堆核救不了</li>
+                <li>最初扫 <span class="mono">ray_num_cpus</span> 曲线全平——输入只有一个分区，集群再大也只有一个 task 在跑</li>
+              </ul>
+            </div>
+            <div class="card" style="border-color:#5c4a22">
+              <h3 class="amber">两种设定服务两个目的</h3>
+              <ul>
+                <li><b>测集群调度路径</b> → 设 <span class="mono">into_partitions=16</span></li>
+                <li><b>测算法结构效率</b> → N=1（本 task 未设该参数，默认单分区）</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">B 的价值不在绝对性能，而在<b>把 Rust 计算窗口放大到可被观测</b>——它是三条约 20% 与 2% 的对照实验里的放大器。</div>
+      </footer>
+      <div class="pageno">6 / 8</div>
+    </section>
+
+    <!-- ==================== 7 · 边界与风险 ==================== -->
+    <section class="slide" id="s7">
+      <header class="s-head">
+        <div class="s-kicker">边界与风险</div>
+        <h2 class="s-title">它还不是生产版：4 个必须知道的缺口</h2>
+      </header>
+      <div class="body" style="margin-top:16px">
+        <table>
+          <colgroup><col style="width:168px"><col><col style="width:308px"></colgroup>
+          <thead><tr><th>缺口</th><th>具体表现</th><th>后果 / 修法</th></tr></thead>
+          <tbody>
+            <tr>
+              <th>不是连通分量</th>
+              <td>只做<b>单轮 min 传播</b>：没有显式边表、没有 Large-star / Small-star 迭代、没有收敛判据</td>
+              <td>A–B、B–C 相似但 A–C 不同桶时会<b>漏合并</b>；需按官方示例补迭代与全局最小标签传播</td>
+            </tr>
+            <tr>
+              <th>无算法正确性校验</th>
+              <td>只断言「零 UDF」+ 回读行数一致；官方实现会与 igraph 连通分量结果比对</td>
+              <td>能保证跑通，不能保证合并对了</td>
+            </tr>
+            <tr>
+              <th>哈希函数会降级</th>
+              <td><span class="mono">_hash64()</span> 依次尝试 <span class="mono">xxhash3_64</span> → 无 seed 版本 → 纯 <span class="mono">hash()</span></td>
+              <td>任务声明承诺 xxhash3_64，降级后实际实现可能不同，是<b>跨环境复现的隐性变量</b></td>
+            </tr>
+            <tr>
+              <th>同仓库两套 MinHash</th>
+              <td>DJ 风格版是纯 Python 单 band（<span class="mono">num_perm=16</span>）；本 pipeline 是 8 band 原生实现</td>
+              <td>normalization / ngram / seed / 哈希变体全不同，跨系统对比必须逐项对齐</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:13px;font-size:14px">
+          另外：<span class="mono">runner/input_loader.py</span> 与 <span class="mono">paths.py</span> 不在仓库历史里（真实运行依赖测试服部署环境），
+          该 checkout 开箱不可执行；Daft 版本 pin 为 <span class="mono">0.7.2</span>。
+        </p>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">前两个缺口是<b>算法级</b>的（合并正确性），后两个是<b>可复现性</b>的——启用前都必须先补。</div>
+      </footer>
+      <div class="pageno">7 / 8</div>
+    </section>
+
+    <!-- ==================== 8 · 优化分支与小结 ==================== -->
+    <section class="slide" id="s8">
+      <header class="s-head">
+        <div class="s-kicker">后续演进与小结</div>
+        <h2 class="s-title">两个 opt-in 优化分支 · 三句话结论</h2>
+      </header>
+      <div class="body" style="margin-top:16px">
+        <div class="cols">
+          <div class="col">
+            <div class="card" style="border-color:#5c4a22">
+              <h3 class="amber">one-pass-bands</h3>
+              <p class="mono" style="font-size:13.5px;color:var(--muted)">VOLC_PIPELINE_B_ONE_PASS_BANDS=1</p>
+              <p style="margin-top:9px;font-size:15px">8 次 <span class="mono">select + union_all</span> 换成一次 <span class="mono">explode</span>。
+                原版每个 band 一条分支各自消费整份计划，MinHash 可能被重复计算；改完后 MinHash 只出现一次。</p>
+            </div>
+            <div class="card" style="border-color:#5c4a22">
+              <h3 class="amber">materialize-minhash</h3>
+              <p class="mono" style="font-size:13.5px;color:var(--muted)">VOLC_PIPELINE_B_MATERIALIZE_MINHASH=1</p>
+              <p style="margin-top:9px;font-size:15px">展开前插一次 <span class="mono">collect()</span>，避免每个分支重算投影。
+                代价是切断流水线、签名进 driver 内存，<b>只适合小样本档</b>。</p>
+            </div>
+            <p class="muted" style="margin-top:11px;font-size:14px">两者都用环境变量 opt-in，baseline 计划仍可复现——延续仓库「性能建议是 opt-in、不是不变式」的约定。</p>
+          </div>
+          <div class="col">
+            <div class="card">
+              <h3>一句话结论</h3>
+              <ul>
+                <li><b>输入</b>：两列 <span class="mono">parquet/lance</span>（<span class="mono">doc_id</span>, <span class="mono">text</span>），来自 web 正文抽取后的语料</li>
+                <li><b>处理</b>：规范化 → 64 维 MinHash → 8 band 展开 → 桶代表 → 分量代表 → 选代表写出（两次 shuffle，零 UDF）</li>
+                <li><b>输出</b>：4 列 deduped parquet，每分量保留 1 行，回读校验</li>
+                <li><b>场景</b>：语料近似去重；工程上用 8× 膨胀放大 Rust 计算窗口</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>下一步可以做</h3>
+              <ul>
+                <li>补迭代式连通分量 + 全局最小标签传播，与官方实现对等</li>
+                <li>输出删除清单与 dedup 计数，让「生效」可观测</li>
+                <li>锁定哈希实现或把实际实现写进 metrics</li>
+                <li>对齐 normalization / ngram / seed 后再做跨系统对比</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="verdict">
+        <div class="v-label">结论</div>
+        <div class="v-text">完整分析见 <span class="mono">docs/rust-kunpeng/pipeline-b-minhash-lsh.md</span>。</div>
+      </footer>
+      <div class="pageno">8 / 8</div>
+    </section>
+
+  </div>
+</div>
+
+<div class="nav" id="nav"></div>
+<div class="hint">← → 翻页 · F 全屏 · P 打印</div>
+
+<script>
+  // 固定 16:9 缩放：务必保留 (iw/ih) 的比较与 scale 计算
+  function fit(){
+    var c=document.getElementById('canvas');
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    c.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  var slides=document.querySelectorAll('.slide'), cur=0;
+  var nav=document.getElementById('nav');
+  for(var i=0;i<slides.length;i++){
+    (function(i){
+      var d=document.createElement('div');
+      d.className='dot'+(i===0?' on':'');
+      d.addEventListener('click',function(){go(i);});
+      nav.appendChild(d);
+    })(i);
+  }
+  function paint(){
+    var dots=nav.querySelectorAll('.dot');
+    for(var i=0;i<dots.length;i++){
+      if(i===cur){dots[i].className='dot on';}else{dots[i].className='dot';}
+    }
+  }
+  function go(n){
+    slides[cur].classList.remove('active');
+    cur=(n+slides.length)%slides.length;
+    slides[cur].classList.add('active');
+    paint();
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown') go(cur+1);
+    if(e.key==='ArrowLeft' ||e.key==='ArrowUp'  ||e.key==='PageUp')                go(cur-1);
+    if(e.key==='Home') go(0);
+    if(e.key==='End')  go(slides.length-1);
+    if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+    if(e.key==='p'||e.key==='P') window.print();
+  });
+</script>
+</body>
+</html>
