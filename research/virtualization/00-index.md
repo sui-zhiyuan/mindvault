@@ -53,12 +53,12 @@
 | 文件 | 主题 | 状态 |
 |---|---|---|
 | `00-index.md` | 任务分解与索引（本文件） | ✅ |
-| `01-history-and-overhead.md` | 发展过程、硬件虚拟化定义、软件虚拟化开销 | ⏳ |
-| `02-multilayer-virtualization.md` | 多层/嵌套虚拟化方案 | ⏳ |
-| `03-hw-capabilities-x86.md` | Intel / AMD 硬件能力 | ⏳ |
-| `04-hw-capabilities-arm-kunpeng.md` | ARM / 鲲鹏硬件能力 | ⏳ |
-| `05-vendors-and-products.md` | 厂商与产品 | ⏳ |
-| `06-sandboxes.md` | 沙箱全景 | ⏳ |
+| `01-history-and-overhead.md` | 发展过程、硬件虚拟化定义、软件虚拟化开销 | ✅ |
+| `02-multilayer-virtualization.md` | 多层/嵌套虚拟化方案 | ✅ |
+| `03-hw-capabilities-x86.md` | Intel / AMD 硬件能力 | ✅ |
+| `04-hw-capabilities-arm-kunpeng.md` | ARM / 鲲鹏硬件能力 | ✅ |
+| `05-vendors-and-products.md` | 厂商与产品 | ✅ |
+| `06-sandboxes.md` | 沙箱全景 | ✅ |
 | `07-existing-notes-map.md` | 存量笔记与虚拟化的关系 | ✅ |
 
 ## 四、方法
