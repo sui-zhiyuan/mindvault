@@ -197,6 +197,36 @@ Firecracker 官网（一手）给出的官方指标是：
 
 ---
 
+## 验证项 6：Turtles（OSDI 2010）数字的可核实程度
+
+`02` 稿的性能表全部引自 Turtles 项目。我独立复核了能拿到的部分。
+
+**已核实（USENIX 官方摘要页，一手）** —— 论文自述的头部结论，原文：
+
+> "Despite the lack of architectural support for nested virtualization in the x86 architecture,
+> it can achieve performance that is **within 6-8% of single-level (non-nested) virtualization**
+> for common workloads, through *multi-dimensional paging* for MMU virtualization and
+> *multi-level device assignment* for I/O virtualization."
+
+由此独立确认三点，均与 `02` 稿一致：
+1. **"常见负载 6–8%"这个量级**；
+2. 两个关键机制名：**multi-dimensional paging** / **multi-level device assignment**；
+3. 论文处理的是**未经修改的 hypervisor**（KVM 与 VMware）——与 `02` 稿"用 VMware Server 作 L1"的用法一致。
+
+**未能逐项复核**：表中 14.5% / 10.3% / 7.82% / 6.3% / 14.98% / 8.85% / 2.28%→5.17% /
+13,000→2,000 / 837、469 Mb/s 等**逐项数字**来自论文正文。
+USENIX 的正文与 slides 均为 `application/pdf`，本环境的 `web_fetch` **不支持 PDF 内容类型**，无法逐项比对。
+→ **定稿纪律**：引用这些逐项数字时必须注明"依据 `02` 稿对论文正文的记录，未逐项复核"；
+只有 **"常见负载 6–8%"** 这一条可作为**已独立核实**的数字使用。
+
+**一处必须在定稿时点明的口径差异**：摘要说的是"**common workloads** 6–8%"，
+而 `02` 稿把 kernbench 的 **14.5%** 也放在同一张表里。二者不矛盾
+（kernbench 是全表最差的一档，不属于"常见负载"的平均），
+但定稿**必须写明"6–8% 是常见负载的区间，重负载可到约 15%"**，
+否则读者会以为论文只说 6–8%。
+
+---
+
 ## 参考资料
 
 | 来源 | URL | 访问日期 | 可靠性 |
@@ -206,6 +236,7 @@ Firecracker 官网（一手）给出的官方指标是：
 | **鲲鹏社区官方 · 鲲鹏920处理器** | https://www.hikunpeng.com/zh/compute/kunpeng920 | 2026-09-16 | **官方一手（Armv8.2 指令集 + 规格）** |
 | KVM arm64 嵌套虚拟化补丁 v11（FEAT_NV2 only，含 Zyngier 放弃 FEAT_NV 原文理由） | http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-November/882814.html | 2026-09-16 | 上游邮件列表 |
 | Firecracker 官网（<125ms / 150 microVM/s/host / <5 MiB / 5 个模拟设备） | https://firecracker-microvm.github.io/ | 2026-09-16 | **厂商一手** |
+| USENIX 官方 · Turtles 论文摘要页（含 "within 6-8% ... for common workloads" 原文） | https://www.usenix.org/conference/osdi10/turtles-project-design-and-implementation-nested-virtualization | 2026-09-16 | **一手（摘要级）；正文 PDF 无法抓取** |
 | KVM arm64 嵌套虚拟化补丁 v10（ARMv8.3/8.4） | http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-May/833892.html | 2026-09-16 | 上游邮件列表 |
 | Merge tag 'kvmarm-6.16'（Linux 6.16） | http://git.armlinux.org.uk/cgit/linux.git/log/scripts?id=7f904ff6e58d398c4336f3c19c42b338324451f7&showmsg=1 | 2026-09-16 | 内核 git |
 | 华为云社区博客《鲲鹏服务器全栈架构》 | https://bbs.huaweicloud.com/blogs/475584 | 2026-09-16 | ⚠️ 个人博主，含免责声明，仅作线索 |
