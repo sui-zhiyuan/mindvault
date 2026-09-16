@@ -42,6 +42,7 @@
 
 - [虚拟化](virtualization/README.md)
   - [硬件虚拟化：发展过程、多层方案与硬件能力依赖](virtualization/hardware-virtualization.md)
+  - [虚拟化厂商、产品与沙箱全景](virtualization/vendors-and-sandboxes.md)
 
 - [探索性学习](learning/README.md)
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)

@@ -11,6 +11,10 @@
 - [硬件虚拟化：发展过程、多层方案与硬件能力依赖](hardware-virtualization.md)
   — 虚拟化演进时间线、硬件虚拟化的可判据定义、软件虚拟化的分档性能损失、
   多级/嵌套虚拟化的方案族与代价、Intel / AMD / ARM / 鲲鹏 的能力矩阵，以及鲲鹏 920 无硬件嵌套路径的结论。
+- [虚拟化厂商、产品与沙箱全景](vendors-and-sandboxes.md)
+  — 五类 hypervisor 类型学、VMware / Microsoft / Oracle / Xen / QEMU / Proxmox 的产品与授权现状、
+  AWS Nitro / Azure Boost / 阿里云神龙 / 华为云擎天 的卸载架构、沙箱的六层隔离边界与对照表、
+  AI Agent 沙箱（含 DSH 自身沙箱的位置与缺口）。
 
 ## 与其他笔记的关系
 
