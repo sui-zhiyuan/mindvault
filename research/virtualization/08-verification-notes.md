@@ -147,6 +147,56 @@
 
 ---
 
+## 验证项 4：ARM 嵌套虚拟化的代际划分与上游状态（修正 02 稿）
+
+`02` 稿初版写"直到 ARMv8.4-NV 才提供 `HCR_EL2.NV` 与 `VNCR_EL2`"。核实后需修正为**两代划分**，但**不臆断两代各自对应哪个架构版本**：
+
+- 上游 KVM 补丁系列的标题本身就反映了这段历史：
+  - v10（2023-05）：`[PATCH v10 00/59] KVM: arm64: ARMv8.3/8.4 Nested Virtualization support`
+  - v11（2023-11）：`[PATCH v11 00/43] KVM: arm64: Nested Virtualization support (FEAT_NV2 only)`
+- v11 的 cover letter 由 **Marc Zyngier** 写明放弃原有 FEAT_NV 的理由（**原文**）：
+  > "Drop support for the original FEAT_NV. **No existing hardware supports it without FEAT_NV2, and the architecture is deprecating the former entirely.** This results in fewer patches, and a slightly simpler model overall."
+- 因此**可安全断言的事实**（4 条）：
+  1. 该能力在架构上分 **FEAT_NV** 与 **FEAT_NV2** 两代；
+  2. 上游 KVM **只支持 FEAT_NV2**，且**没有任何已存在硬件只实现 FEAT_NV 而不实现 FEAT_NV2**；
+  3. 架构正在**废弃 FEAT_NV**；
+  4. ⇒ **事实上的硬件嵌套门槛 = FEAT_NV2**。
+- **不臆断**：FEAT_NV 名义上究竟属 ARMv8.3 还是 ARMv8.4 —— 未取得 Arm ARM 逐条定义
+  （Arm developer 文档站抓取被重定向到 support.arm.com 而失败）。
+  汇总稿写法应为"分 FEAT_NV / FEAT_NV2 两代（KVM 早期系列题为 ARMv8.3/8.4）"，
+  **不要**写成"FEAT_NV 是 ARMv8.3"这类定点断言。
+- 合入时间（已验证）：**Linux 6.16**，`Merge tag 'kvmarm-6.16'`，2025-05-26。
+  → 与 x86 的 KVM 嵌套（**Linux 3.1，2011**）相差约 **14 年**。
+- 对鲲鹏的含义不变且更强：鲲鹏 920 = **ARMv8.2**，连 FEAT_NV 都不具备 → **无任何硬件嵌套路径**。
+
+---
+
+## 验证项 5：产品性能指标必须回到厂商一手页（修正 02 稿）
+
+`02` 稿初版把 Firecracker 写成"约 5 μVM/核/秒创建率"，**该数字查无实据，已修正**。
+Firecracker 官网（一手）给出的官方指标是：
+
+| 指标 | 官方值 |
+|---|---|
+| 启动时间 | boot in **<125 ms** |
+| 创建速率 | **up to 150 microVMs per second per host** |
+| 单实例内存开销 | **<5 MiB overhead per VM** |
+| 设备模型 | **only 5 emulated devices**（virtio-net / virtio-block / virtio-vsock / serial console / 最小键盘控制器） |
+| 硬件前提 | 64-bit Intel、AMD、Arm，需硬件虚拟化支持 |
+
+顺带核实的两点：
+- **与本仓库笔记一致**：`docs/rust-kunpeng/agentenv-cubesandbox-comparison.md` 称 Firecracker 为"极简（3 virtio 设备）"——
+  与官方"5 个模拟设备"**不矛盾**：官方把 serial console 与键盘控制器也计入模拟设备，virtio 设备恰为 3 个。
+- **血缘印证**：Firecracker 源自 Chromium OS 的 crosvm，与 crosvm 共同构成 rust-vmm 社区 ——
+  这正是 `01`/`06` 稿要讲的"Rust 化"趋势的一手证据。
+- ⚠️ 注意：CubeSandbox 笔记里的"冷启动 <60ms、单实例 <5MB"与 Firecracker 官方指标高度接近，
+  引用时**不要**把厂商宣称值当作第三方实测值。
+
+**通用纪律**：凡产品性能指标（启动时间、内存开销、密度），定稿必须回到**厂商官方页**取数并注明"厂商宣称"，
+与论文实测值分开标注、互不冒充。
+
+---
+
 ## 参考资料
 
 | 来源 | URL | 访问日期 | 可靠性 |
@@ -154,7 +204,8 @@
 | Barham et al., Xen and the Art of Virtualization (SOSP'03) | https://studyres.com/doc/8893844/xen-and-the-art-of-virtualization | 2026-09-16 | 原始论文（镜像站） |
 | **HiSilicon 官方 · Kunpeng 920** | https://www.hisilicon.com/en/products/kunpeng/huawei-kunpeng/huawei-kunpeng-920 | 2026-09-16 | **官方一手（Architecture = ARMv8.2）** |
 | **鲲鹏社区官方 · 鲲鹏920处理器** | https://www.hikunpeng.com/zh/compute/kunpeng920 | 2026-09-16 | **官方一手（Armv8.2 指令集 + 规格）** |
-| KVM arm64 嵌套虚拟化补丁 v11（FEAT_NV2 only） | http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-November/882814.html | 2026-09-16 | 上游邮件列表 |
+| KVM arm64 嵌套虚拟化补丁 v11（FEAT_NV2 only，含 Zyngier 放弃 FEAT_NV 原文理由） | http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-November/882814.html | 2026-09-16 | 上游邮件列表 |
+| Firecracker 官网（<125ms / 150 microVM/s/host / <5 MiB / 5 个模拟设备） | https://firecracker-microvm.github.io/ | 2026-09-16 | **厂商一手** |
 | KVM arm64 嵌套虚拟化补丁 v10（ARMv8.3/8.4） | http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-May/833892.html | 2026-09-16 | 上游邮件列表 |
 | Merge tag 'kvmarm-6.16'（Linux 6.16） | http://git.armlinux.org.uk/cgit/linux.git/log/scripts?id=7f904ff6e58d398c4336f3c19c42b338324451f7&showmsg=1 | 2026-09-16 | 内核 git |
 | 华为云社区博客《鲲鹏服务器全栈架构》 | https://bbs.huaweicloud.com/blogs/475584 | 2026-09-16 | ⚠️ 个人博主，含免责声明，仅作线索 |
