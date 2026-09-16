@@ -90,7 +90,7 @@
 
 **两条读法**：
 - **"VM 比容器慢一个数量级"是旧印象**。同一机器上 Docker 容器约 150 ms、unikernel VM 仅 4 ms——瓶颈原本在 XenStore 与设备创建的软件路径上，可被工程消除。
-- **引用 gVisor 性能必须写明平台**。"gVisor 慢 20 倍"只在 **ptrace** 平台成立（官方自述该平台 "no way represents an ideal scenario"）；KVM 平台下同一微基准甚至快于 runc。
+- **引用 gVisor 性能必须写明平台**。"gVisor 慢 20 倍"只在 **ptrace** 平台成立（官方自述该平台 "no way represents an ideal scenario"）；KVM 平台下同一微基准甚至快于 runc。另需注意**平台代次**：**ptrace 平台自 2023 年中已被 systrap 取代，现不再支持并将被移除**，引用旧数据时须说明。
 
 ### 五、沙箱 vs 虚拟化：对照
 
@@ -103,11 +103,47 @@
 | 逃逸难度 | **最低**（见下） | 中 | 高 | 最高（但信任根被攻破过） |
 | 异构内核/OS | ❌ | ❌ | ✅ | ✅ |
 
-**"容器 = 沙箱"在工程上是错的**，有 NVD 原文佐证：CVE-2019-5736（runc ≤1.0-rc6，"overwrite the host runc binary (and consequently obtain host root access)"）；CVE-2022-0492（cgroup v1 `release_agent` 可提权并 "bypass the namespace isolation"）；CVE-2024-21626（runc ≤1.1.11 因 fd 泄漏，新 spawn 进程的工作目录落在**宿主文件系统命名空间**内）。
+**"容器 = 沙箱"在工程上是错的——而且这不是本笔记的推断，是标准机构与生态自己的定性**：
 
-**seccomp 与 Landlock 只缩小攻击面，不能兜底**：crosvm 官方 seccomp 文档直言 "checking the contents of pointers isn't possible"；Landlock 官方列出当前无法限制的 syscall（`chdir`/`stat`/`flock`/`chmod`/`chown`/`setxattr`/`utime`/`fcntl`/`access`）。
+- **NIST SP 800-190 §3.5.2**：共享内核 "invariably results in a **larger inter-object attack surface than seen with hypervisors**"，且容器运行时提供的隔离级别 "**not as high as that provided by hypervisors**"。
+- **Kubernetes 官方多租户文档**：容器 "offer a **weaker isolation boundary than virtual machines**"，并指出容器是共享内核上的进程、挂载宿主 `/sys` 与 `/proc`；**"运行不可信代码"需要 VM 或用户态内核沙箱**。
+- **Docker Engine 安全文档**：默认 capabilities 与挂载 "may provide **incomplete isolation, either independently, or when used in combination with kernel vulnerabilities**"。
+- **gVisor 安全模型**：**"A sandbox is not a substitute for a secure architecture."**
+
+有 NVD 原文佐证的逃逸案例（**不是孤例**——2024-01-31 的 "Leaky Vessels" 是一个 runc + BuildKit 的批次披露）：
+
+| CVE | CVSS | 机制 |
+|---|---|---|
+| CVE-2019-5736 | 8.6 | 容器内 root **覆写宿主 runc** 二进制 → 取得宿主 root |
+| CVE-2024-23652（BuildKit） | **10.0** | `RUN --mount` 可**删除宿主文件** |
+| CVE-2024-23653（BuildKit） | 9.8 | API 可请求高权限容器 |
+| CVE-2019-14271 | 9.8 | `docker cp` 在 chroot 内经 nsswitch 加载库 → 代码注入 |
+| CVE-2021-25741 | 8.8 | kubelet **subPath** 符号链接交换 → 读写卷外/宿主文件 |
+| CVE-2024-21626 | 8.6 | fd 泄漏 → 工作目录落在**宿主文件系统命名空间** |
+| CVE-2022-0492 | 7.8 | cgroup v1 `release_agent` 提权并 "bypass the namespace isolation"（已入 CISA KEV） |
+| CVE-2020-15257 | 5.2 | containerd shim 的 abstract UDS 只校验 `euid=0` |
+
+**seccomp 与 Landlock 只缩小攻击面，不能兜底——内核官方文档就是这么写的**：
+
+- **kernel.org seccomp 文档**原文：**"System call filtering isn't a sandbox. It provides a clearly defined mechanism for minimizing the exposed kernel surface."** 同一文档还明确：BPF **不能解引用指针**（`struct seccomp_data` 只含寄存器参数值），且 **`SECCOMP_RET_TRACE` 可被 ptracer 用来逃逸**（"seccomp-based sandboxes MUST NOT allow use of ptrace … without extreme care; ptracers can use this mechanism to escape"）。
+- **io_uring 让 seccomp 完全失明**：LWN《Task-level io_uring restrictions》指出 seccomp 对 io_uring 提交的操作"no visibility into — and thus no way to control"，**放行 `io_uring_setup`/`enter` 几乎等于放弃沙箱**。这也是 gVisor **默认禁用 io_uring** 的原因。
+- **seccomp 自身也被绕过过**：CVE-2026-89603（CVSS 8.4，`SECCOMP_FILTER_FLAG_TSYNC` 与 ptrace 停驻的竞态使新过滤器被静默绕过）、CVE-2022-30594（`PTRACE_SEIZE` 绕过 `PT_SUSPEND_SECCOMP`）。
+- **开销不可忽略**：LWN 实测 6 条 BPF 的 deny-open 过滤器使 `getppid()` 多耗 **25%**（JIT 关）/ **约 15%**（JIT 开）。
+- **Landlock 官方**列出当前无法限制的 syscall（`chdir`/`stat`/`flock`/`chmod`/`chown`/`setxattr`/`utime`/`fcntl`/`access`）；crosvm 官方 seccomp 文档亦直言 "checking the contents of pointers isn't possible"。
 
 **机密计算也不是"绝对安全"**：SGX 威胁模型**明确排除侧信道**；SGAxe/CacheOut（CVE-2020-0549）从 Intel 签名的 quoting enclave 提取了 attestation 私钥并伪造 quote；CacheWarp（CVE-2023-20592）与 ÆPIC Leak（CVE-2022-21233）是**架构性**（非瞬态执行）缺陷；BadRAM（IEEE S&P'25）仅需物理接触内存条 SPD 芯片即可攻破 SEV-SNP 的 attestation。SEV 官方把可用性攻击、侧信道、物理攻击、信任锚被攻破列为 out of scope。**做 Agent 沙箱时选 ① 档通常是合规驱动，而非安全驱动。**
+
+**② 档虚拟机自身也被逃逸过——这正是"设备模型越小越好"的由来**：
+
+| CVE | 机制 |
+|---|---|
+| Xen CVE-2007-4993 | `pygrub` 处理 guest 提供的 `grub.conf` 时把内容用于 exec → guest 内高权限用户在 **domain 0** 执行任意命令 |
+| **VENOM CVE-2015-3456** | QEMU **软盘控制器**命令越界写 → 影响 Xen 与 KVM，可致宿主任意代码执行（Firecracker 只留 3 个 virtio 设备的直接动机） |
+| CVE-2019-14378 | libslirp `ip_reass` 首分片处理错误 → 堆溢出（QEMU SLiRP 用户态网络） |
+| KVM CVE-2021-22543 | 对 `VM_IO\|VM_PFNMAP` vma 处理不当绕过只读检查 → 能控制 VM 的用户可读写随机内存页并本地提权 |
+
+**microVM 逃逸的表述纪律（容易写错，必须谨慎）**：NVD 关键词检索 Firecracker 只得到两个**宿主侧 DoS**（CVE-2020-27174 串口缓冲无上限增长、CVE-2020-16843 网络栈重入冻结），**没有公开的 guest→host 逃逸 CVE**。但这不等于安全：**硬件侧信道不认 microVM 边界**——Meltdown（CVE-2017-5754）与 Spectre（CVE-2017-5753/5715）官方说明即承认"it might be possible to steal data from other customers"；L1TF（CVE-2018-3646）可经 terminal page fault + 侧信道读 L1；Rowhammer 借内存去重（KSM）**翻转同宿主其它 VM 的页内位**并以此攻破 OpenSSH 公钥认证（Flip Feng Shui, USENIX Security 2016）。
+→ **正确表述是**："尚无公开的 guest→host 逃逸 CVE，但硬件侧信道不受 microVM 边界保护"。**不要写成"microVM 不会被逃逸"，也不要写成"microVM 也会被逃逸"**——两者都超出证据。
 
 ### 六、AI Agent 沙箱
 
@@ -126,18 +162,27 @@
 
 **DSH 沙箱的准确位置**：`@deepseek-ai/dsh-sandbox` README 原文承认进程 "still shares the host kernel and filesystem; use a container, microVM, or remote executor when the whole environment must be isolated"。三模式 `read-only`（默认）/ `workspace-write` / `danger-full-access`，无法强制时 **fail-closed 返回 `SANDBOX_UNAVAILABLE`**；runner 链为 Linux `bwrap → Landlock`、macOS Seatbelt、Windows ACL。**结构性缺口是网络出口**：bwrap profile 只有 `--unshare-pid`、**没有 `--unshare-net`**，Landlock 授权只覆盖文件路径，因此**没有任何内核强制的出口控制**；出口治理退到进程级 HTTP 代理，而该包 README 自述 **E2B SDK 与 OTLP exporter 因自带 transport 绕过了代理**。对照 Claude Code：Linux 上用 bubblewrap + **socat 把流量中继到沙箱代理以做域名级网络隔离** + 可选 seccomp——这是 DSH 最值得补、且有现成参考的一块。
 
+**语气上要注意**：`@deepseek-ai/dsh-sandbox` 的 README 把 container 与 microVM 并列为"隔离整个环境"的选项，但**二者安全上并不等价**——这不是偏好问题，NIST SP 800-190 与 Kubernetes 官方文档给出的是同一判断（见第五节开头）。
+
 ## 延伸
+
+### 三句话记住沙箱的边界
+
+1. **NIST SP 800-190**：共享内核 "invariably results in a larger inter-object attack surface than seen with hypervisors"，容器隔离 "not as high as that provided by hypervisors"。
+2. **kernel.org**：**"System call filtering isn't a sandbox."** 它只做"minimizing the exposed kernel surface"；而且 **io_uring 让 seccomp 完全失明**。
+3. **microVM**：尚无公开的 guest→host 逃逸 CVE，但 **Meltdown/Spectre/L1TF/Rowhammer 这些硬件侧信道不认 microVM 边界**——沙箱能防的是空间维度（谁能访问谁的内存与文件），硬件侧信道在另一个维度上。
 
 ### 常见误区（逐条有据）
 
 | 误区 | 事实 |
 |---|---|
-| 「容器就是沙箱」 | 见上：CVE-2019-5736 / CVE-2022-0492 / CVE-2024-21626 均为 NVD 原文记录的容器逃逸 |
-| 「gVisor 一定慢」 | 平台决定一切：ptrace 约 19.7×，KVM 平台可快于 runc |
-| 「seccomp 能挡住内核漏洞」 | 它只缩小内核代码面；指针内容无法校验，已允许路径上的漏洞仍可利用 |
-| 「WASM 天生安全」 | 线性内存隔离不等于能力隔离，宿主 API 与资源耗尽仍需自行约束 |
-| 「microVM 就安全，不需要再加固」 | VMM 与宿主内核仍在 TCB 内；Firecracker 自身仍配合 jailer（seccomp/cgroup）做第二道防线 |
-| 「用了机密计算就绝对安全」 | 信任根被攻破过（CVE-2020-0549、BadRAM）；侧信道通常在威胁模型之外 |
+| 「容器就是沙箱」 | **NIST SP 800-190**：共享内核 "invariably results in a larger inter-object attack surface than seen with hypervisors"，容器隔离 "not as high as that provided by hypervisors"；K8s 官方亦称容器是 "weaker isolation boundary"；且已有成批逃逸 CVE（含 BuildKit CVE-2024-23652，CVSS 10.0） |
+| 「gVisor 一定慢」 | 平台决定一切：ptrace 约 19.7×，KVM 平台下甚至快于 runc；且 **ptrace 平台已被 systrap 取代、现不再支持并将移除** |
+| 「gVisor 兼容性无忧」 | 官方列出未实现项：沙箱内 cgroup **只记账、不强制限额**；不支持 fat32/ext3/ext4 块设备挂载；**io_uring 默认禁用**；**沙箱内跑 KVM 不受支持**；GPU 需 `--nvproxy` 且严格匹配驱动版本 |
+| 「seccomp 能挡住内核漏洞」 | 内核官方文档直接否定：**"System call filtering isn't a sandbox."** 它只是 "minimizing the exposed kernel surface"；BPF 不能解引用指针；**io_uring 让 seccomp 完全失明**；seccomp 自身也有被绕过记录（CVE-2026-89603、CVE-2022-30594） |
+| 「WASM 天生安全」 | 有真实逃逸 CVE：CVE-2023-26489（9.9，越界约 34 GB）、CVE-2026-34971（7.8，NVD 明确称 sandbox escape）、CVE-2024-51745（**10.0**，未拦截 `COM¹`/`LPT¹` 等上标数字设备名）；USENIX Security'20 论文证明 wasm 内可端到端完成利用 |
+| 「microVM 就安全，不需要再加固」 | 尚无公开的 guest→host 逃逸 CVE，但**硬件侧信道（Meltdown/Spectre/L1TF/Rowhammer）不认 microVM 边界**；VMM 与宿主内核仍在 TCB 内，Firecracker 自身仍配 jailer（seccomp/cgroup）作第二道防线 |
+| 「用了机密计算就绝对安全」 | 信任根被攻破过（CVE-2020-0549 提取 attestation 私钥并伪造 quote、BadRAM 攻破 SEV-SNP attestation）；侧信道通常在威胁模型之外 |
 | 「有沙箱就不需要出口控制与审计」 | 沙箱管"能碰什么"，出口管"能发什么"；DSH 的缺口恰在此处 |
 
 ### 与本仓库存量笔记的关系
@@ -185,3 +230,11 @@
 17. Landlock 官方文档（当前无法限制的 syscall 列表）与 crosvm seccomp 文档 — https://docs.kernel.org/userspace-api/landlock.html
 18. `@deepseek-ai/dsh-sandbox` 与 `@deepseek-ai/dsh-http-proxy` 包内 README（只读检视） — 本机 DSH 安装目录
 19. 本仓库中间调研稿：`research/virtualization/05-vendors-and-products.md`、`06-sandboxes.md`、`07-existing-notes-map.md`
+20. NIST SP 800-190《Application Container Security Guide》§3.5.2（共享内核攻击面与隔离强度定性） — https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf ｜ ⚠️ 该文档为 PDF，本环境无法抓取原文，**引文由分册调研取证、未逐字复核**
+21. Kubernetes 官方《Multi-tenancy》（容器隔离弱于虚拟机） — https://kubernetes.io/docs/concepts/security/multi-tenancy/
+22. Linux 内核《Seccomp BPF》文档（**"System call filtering isn't a sandbox."**、BPF 不解引用指针、ptrace 逃逸警告） — https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html ｜ ✅ 本次已抓取原文逐字核实
+23. LWN《Task-level io_uring restrictions》（io_uring 使 seccomp 失去可见性） — https://lwn.net/Articles/1054225/
+24. gVisor 官方《Security Model》《Compatibility》《Platforms》 — https://gvisor.dev/docs/architecture_guide/security/
+25. Lehmann et al., *Everything Old is New Again: Binary Security of WebAssembly*, USENIX Security 2020 — https://www.usenix.org/conference/usenixsecurity20/presentation/lehmann
+26. Agache et al., *Firecracker: Lightweight Virtualization for Serverless Applications*, NSDI 2020 — https://www.usenix.org/conference/nsdi20/presentation/agache
+27. Flip Feng Shui（Rowhammer + KSM 跨 VM 内存位翻转）, USENIX Security 2016；L1TF CVE-2018-3646；Meltdown CVE-2017-5754 / Spectre CVE-2017-5753、CVE-2017-5715
