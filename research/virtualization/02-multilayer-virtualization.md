@@ -12,8 +12,8 @@
 4. **nested EPT/NPT 是性能分水岭**：没有它，L1 只能用影子页表，嵌套场景要把 3 级翻译压进 1 张 shadow page table；有它，L2 的两级翻译可以硬件直通，L0 只在"L1 的 EPT 页表本身被改"时介入。
 5. **数量级结论（Turtles, OSDI 2010，KVM 同时作 L0/L1，x86 无嵌套硬件支持）**：相对单层虚拟化，kernbench 开销 **14.5%**、SPECjbb 得分下降 **7.82%**；把 `VMREAD/VMWRITE` 的开销扣掉后分别为 **10.3% / 6.3%**。同一实验中 L0 自身占用的 CPU 从单层的 **2.28%** 升到嵌套的 **5.17%**——"多一层"放大的是宿主开销，不是线性叠加。
 6. **朴素软件模拟的代价是数量级的**：同一论文指出，更朴素的 MMU 虚拟化做法会让部分有用负载"至少慢 3 倍"（three-fold slowdown）。
-7. **云厂商官方定位：嵌套是开发便利，不是生产性能方案**。AWS 文档把三层明确为 L0 = Nitro hypervisor、L1 = 客户实例、L2 = 实例内创建的 VM，L1 只支持 KVM 与 Hyper-V，并建议"对性能敏感或有严格延迟要求的客户改用裸金属实例"。
-8. **ARM 的硬件嵌套支持来得很晚，而且更晚才进主线**：硬件侧直到 **ARMv8.4 的 FEAT_NV / FEAT_NV2** 才提供 `HCR_EL2.NV/NV2` 与 `VNCR_EL2`；在此之前 L0 只能靠 `HCR_EL2.TVM/TRVM` 把 L1 对虚拟内存控制寄存器的访问 trap 到 L0 做 trap-and-emulate。**主线 KVM/arm64 的嵌套支持只覆盖 FEAT_NV2**（补丁系列标题即 "Nested Virtualization support (FEAT_NV2 only)"，即不支持只有 FEAT_NV 的实现），并且**直到 2025 年才随 Linux 6.16 合入**——这比 x86 的 VMCS shadowing（2013）晚了约 12 年。
+7. **云厂商官方定位：嵌套是开发便利，不是生产性能方案**。AWS 文档把三层明确为 L0 = Nitro hypervisor、L1 = 客户实例、L2 = 实例内创建的 VM，L1 只支持 KVM 与 Hyper-V，并建议"对性能敏感或有严格延迟要求的客户改用裸金属实例"；Azure 文档把嵌套明确面向**开发、测试、培训、演示**环境（2017 年版本支持 Dv3/Ev3 系列）。三家都提供"逃逸"路径。
+8. **ARM 的硬件嵌套支持来得很晚，而且更晚才进主线**：硬件侧分 **FEAT_NV** 与 **FEAT_NV2** 两代（`HCR_EL2.NV` / `NV2` 与 `VNCR_EL2`；KVM 早期补丁系列标题即写作 "ARMv8.3/8.4 Nested Virtualization support"）。**主线 KVM/arm64 最终只覆盖 FEAT_NV2** —— Zyngier 在 v11 补丁说明中给出的理由（原文）：*"No existing hardware supports it without FEAT_NV2, and the architecture is deprecating the former entirely."* 在此之前 L0 只能靠 `HCR_EL2.TVM/TRVM` 把 L1 对虚拟内存控制寄存器的访问 trap 到 L0 做 trap-and-emulate。**完整支持直到 2025 年才进入主线**（2023 年底仍在评审；2025-07 的 6.17 已在其之上追加 FEAT_RAS/DoubleFault2 的嵌套支持）。对照 x86：KVM 的嵌套 VMX 自 **Linux 3.1（2011）** 即可用，ARM 的可用嵌套支持晚了约 **14 年**。
 9. **设备侧还有第三级翻译**：IOMMU/SMMU 的 stage-1（guest 控制）+ stage-2（hypervisor 控制）在嵌套下需要再叠一层；Intel VT-d Scalable Mode 的文档直接称之为 "three-stage address translation"。AMD IOMMU 的 nested translation 支持到 2025–2026 仍在补丁评审中，尚未稳定。
 10. **内存超分、dirty logging、大页是 EPT/NPT 路线的三个结构性痛点**：写保护页会累加 `->disallow_lpage` 从而阻止大页实例化；dirty logging 依赖 EPT 写保护，让每次写都产生 EPT violation；EPT 无法自然表示"不存在但可换出"的 GPA（要靠 balloon/swap 配合）。
 11. **绕开方案（裸金属 + DPU）本质是"让客户自己的 hypervisor 当 L0"**：AWS Nitro、阿里云神龙 MOC、华为云擎天把网络/存储/安全卸载到卡上，宿主 hypervisor 极小化甚至不存在，从根上避免 exit 放大。
@@ -109,8 +109,10 @@ KVM 官方文档《Nested VMX》给出的术语是理解所有实现的地基：
 
 补充说明：
 
-- `HCR_EL2.NV` / `NV2` / `VNCR_EL2` 属于 ARMv8.4 的 **FEAT_NV / FEAT_NV2**；ARMv8.3 未引入 NV。**ARMv8.3 与嵌套的具体关系未能证实**，本稿不臆断。
-- **主线状态（已核实）**：KVM/arm64 的嵌套虚拟化补丁系列长期评审（可见 v10/v11 系列），最终以 **"Nested Virtualization support (FEAT_NV2 only)"** 的形式于 **Linux 6.16（2025 年合并窗口）** 合入。含义有两点：①**只支持 FEAT_NV2**，仅有 FEAT_NV 的实现不在支持范围内；②相比 x86 的 VMCS shadowing（2013），ARM 的可用嵌套支持晚了约 12 年，因此 ARM 云平台上"嵌套可用"高度依赖内核版本与 CPU 代次，选型时必须按目标内核实测。已合入主线不等于生产级成熟，嵌套 stage-2 的 reverse map 等仍在后续版本继续演进。
+- **代际定位**：该能力分 **FEAT_NV** 与 **FEAT_NV2** 两代（`HCR_EL2.NV` / `NV2` 与 `VNCR_EL2`）。`04-hw-capabilities-arm-kunpeng.md` 依据 Arm 文档把 **FEAT_NV 归 ARMv8.3、FEAT_NV2 归 ARMv8.4**；本稿未独立复核该版本归属（Arm developer 文档站抓取被重定向到 support.arm.com 而失败），汇总时**以 04 稿为准**统一表述。
+- 上游最终**删除了对 FEAT_NV 的支持**，Zyngier 在 v11 补丁说明中给出的理由（原文）：*"No existing hardware supports it without FEAT_NV2, and the architecture is deprecating the former entirely."* → **能跑硬件嵌套的芯片必然具备 FEAT_NV2**。
+- **主线状态（部分证实，措辞已收紧）**：KVM/arm64 的嵌套虚拟化补丁系列长期评审（v10/v11，2023 年），最终以 **"Nested Virtualization support (FEAT_NV2 only)"** 的形式在 **2025 年进入主线**。含义有两点：①**只支持 FEAT_NV2**，仅有 FEAT_NV 的实现不在支持范围内（ARMv8.2 及更早无从谈起）；②相比 x86 的 KVM 嵌套（Linux 3.1，**2011**），ARM 的可用嵌套支持晚了约 **14 年**。
+  ⚠️ **请勿写成"随 Linux 6.16 合入"**：`Merge tag 'kvmarm-6.16'`（2025-05-26）确实存在，但本稿**未能取得其正文**逐条确认；能确认的是 **2025-07 的 6.17 已在其之上追加 "Nested support for FEAT_RAS and FEAT_DoubleFault2"**（KVM pull 原文），即基础支持**早于 6.17、晚于 6.8**（v11 时 Zyngier 仍只期望"把本系列的一个前缀带进 6.8"）。定稿应写"**2025 年进入主线**"，不要指定具体小版本。
 
 ### 2.6 绕开方案：裸金属实例 + DPU/SmartNIC 卸载
 
@@ -127,6 +129,16 @@ KVM 官方文档《Nested VMX》给出的术语是理解所有实现的地基：
 
 > **未能证实**：AWS Nitro / 神龙 / 擎天 三者的"裸金属 vs 嵌套 VM"横向定量对比数据；本稿未找到可交叉验证的公开基准。
 
+### 2.7 三大云厂商对嵌套的官方支持姿态
+
+| 云 | 官方说法 | 支持范围 | 定位 |
+|---|---|---|---|
+| **AWS** | 明确把三层定义为 L0=Nitro hypervisor、L1=客户实例、L2=实例内 VM；L1 目前**只支持 KVM 和 Hyper-V** | 仅部分 `*i` 系列（如 M7i/M8i/C7i/C8i/R7i/R8i/X8i/I7i 等） | 面向 Docker Desktop、WSL2、Android 模拟器、QEMU 等**开发工作流**；性能敏感客户建议用裸金属 |
+| **Azure** | 官方文档称嵌套虚拟化在 **Dv3 / Ev3 系列**上受支持（该文档版本为 2017 年） | Dv3 / Ev3（**当前是否已扩展到更多规格族未能证实**） | 明确面向 **开发、测试、培训、演示**环境 |
+| **GCP** | 有官方《About nested virtualization》文档 | **未能证实**（本次未能抓取页面内容） | 未证实 |
+
+**共性**：三家都把嵌套定位为**开发/测试便利能力**，而不是生产性能方案；AWS 与 Azure 都提供了"逃逸"路径（裸金属实例 / 更高规格或裸金属）。这与第五节的性能数据一致。
+
 ---
 
 ## 三、嵌套虚拟化解决了什么问题（以及它的代价）
@@ -140,7 +152,7 @@ KVM 官方文档《Nested VMX》给出的术语是理解所有实现的地基：
 | **CI 里跑模拟器 / 测试 hypervisor** | Android 模拟器、QEMU 加速模式需要 KVM/HAXM/WHPX；hypervisor 开发者需要在 VM 里调试自己的 hypervisor | 裸金属 CI runner |
 | **VDI / 教学实验** | 在给定的一个 VM 里让学生有 root 权限跑自己的 hypervisor | 每人一台物理机 |
 | **云上 Android 模拟器** | 移动应用云测需要大量可加速的模拟器实例 | 裸金属实例池 |
-| **机密计算 + 嵌套** | 在 CVM（TDX/SEV-SNP）内再跑 VM 或 enclave | **受限**：主流 CVM 技术对"guest 内再开 CVM"支持有限；实践上多用同层 enclave / 进程级隔离替代（见「未能证实」） |
+| **机密计算 + 嵌套** | 在 CVM（TDX/SEV-SNP）内再跑 VM 或 enclave | **受限且分厂商**：SEV-SNP 侧已有 Hyper-V 上嵌套 SNP guest 的补丁（见 3.3），需 L0 补齐 RMP 等专有机制；TDX 侧未能证实 |
 | **Kata / gVisor 在 VM 内的分层部署** | 云主机本身就是 L1，客户在其内跑 Kata（每 Pod 一个 microVM）或 gVisor | 直接使用托管 K8s + 厂商提供的安全容器 |
 | **软件定义的一切（SDx）跑在 VM 内** | 在 VM 里跑 Ceph/OVS/k8s 等"需要虚拟化能力"的基础设施 | 裸金属 |
 
@@ -282,6 +294,7 @@ KVM 的 x86 shadow MMU 文档把要处理的三种翻译列得很清楚：
 - **ARMv8.4-NV vs trap-and-emulate 的定量对比**：未能证实。
 - **"一次 L2 exit 触发 2–3 次 L0 exit" 这类具体倍数**：未能证实（Turtles 只给出 L0 CPU 占比 2.28%→5.17% 的观测）。
 - **云厂商裸金属 vs 嵌套 VM 的性能对比数字**：未能证实。
+- **Intel TDX 的嵌套 TD 官方支持状态**：未能证实（AMD SEV-SNP 侧有 RFC 补丁证据，见 3.3）。
 
 ---
 
@@ -296,7 +309,7 @@ KVM 的 x86 shadow MMU 文档把要处理的三种翻译列得很清楚：
 | Xen nestedhvm | EPT + `hap=1` + `nestedhvm=1` | 官方称常见场景低开销，但不建议生产 | 实验、测试 | 存在 L1→L0 DoS 已知问题 |
 | ARM trap-and-emulate | ARMv8.0 + 虚拟化扩展 | 每次 EL2/EL1 寄存器访问 trap | 存量 ARM 平台 | 代价高 |
 | ARM VHE guest 原生访问 | ARMv8.1 VHE | 显著低于纯 trap | ARMv8.1+ 云平台 | cache 维护指令仍有 trap 冲突 |
-| ARMv8.4 FEAT_NV2（`VNCR_EL2`） | ARMv8.4 + **FEAT_NV2** | 预期显著优于 trap（**无公开定量数据**） | 新 ARM 服务器 | 主线 KVM 只支持 NV2，2025 年随 Linux 6.16 合入 |
+| ARMv8.4 FEAT_NV2（`VNCR_EL2`） | ARMv8.4 + **FEAT_NV2** | 预期显著优于 trap（**无公开定量数据**） | 新 ARM 服务器 | 主线 KVM 只支持 NV2，**2025 年进入主线**（具体小版本未逐条核实） |
 | 裸金属实例 | 无 hypervisor 或极薄 hypervisor | 无 exit 放大 | 性能敏感、自定义 hypervisor、CVM 需求 | AWS 官方推荐路径 |
 | 裸金属 + DPU/SmartNIC | Nitro / MOC / 擎天等卸载卡 | I/O 与中断不占宿主 CPU | 云网络/存储密集、K8s 数据面 | 各厂商卸载边界需按官方文档核实 |
 | 微 VM（Firecracker/Cloud Hypervisor） | KVM + 一层硬件虚拟化 | 约 5 μVM/核/秒创建率；无需嵌套 | AI Agent 沙箱、FaaS、多租户 CI | 见 `docs/rust-kunpeng/agentenv-cubesandbox-comparison.md` |
@@ -310,7 +323,7 @@ KVM 的 x86 shadow MMU 文档把要处理的三种翻译列得很清楚：
 2. **现代硬件上嵌套开销的可靠数字缺失**：需要一条可在自有环境复现的基准（L0/L1/L2 三层，分别测 CPU、内存带宽、4K/顺序磁盘、网络 PPS、中断密集），否则"嵌套开销 X%"的说法无法引用。
 3. **ARMv8.4-NV 的实际收益**：`VNCR_EL2` 把虚拟 EL2 寄存器重定向到内存后，哪些负载受益最大？与 trap-and-emulate 的差值是多少？
 4. **AVIC / APICv 在嵌套下到底何时可用**：需要内核代码与提交记录的确切条件，以及不可用时对中断延迟的量化影响。
-5. **机密计算与嵌套的组合边界**：TDX / SEV-SNP 是否允许 guest hypervisor 为其 L2 提供同等保护？现状与路线图需以 Intel/AMD 官方文档核实。
+5. **机密计算与嵌套的组合边界**：AMD SEV-SNP 已有"Hyper-V 上跑嵌套 SNP guest"的 RFC 补丁（见 3.3），但 Intel TDX 的嵌套 TD 支持状态**未能证实**；两者是否允许 guest hypervisor 为其 L2 提供同等保护，需以 Intel/AMD 官方文档核实。
 6. **设备侧第三级翻译的实际落地程度**：Intel VT-d Scalable Mode 的三级翻译、AMD IOMMU nested translation（HWPT-based vs vIOMMU-based 两条路线）、ARM SMMUv3 nested stage 的主线状态。
 7. **dirty logging × 大页 × 嵌套三者的相互削弱**：`->disallow_lpage` 机制在多层场景下的累积效应缺少实测。
 
@@ -324,19 +337,22 @@ KVM 的 x86 shadow MMU 文档把要处理的三种翻译列得很清楚：
 2. Linux 内核 KVM《The x86 kvm shadow mmu》文档 — https://www.kernel.org/doc/Documentation/virtual/kvm/mmu.txt
 3. Muli Ben-Yehuda et al., *The Turtles Project: Design and Implementation of Nested Virtualization*, OSDI 2010 — https://www.usenix.org/legacy/events/osdi10/tech/full_papers/Ben-Yehuda.pdf
 4. AWS 文档《Use nested virtualization to run hypervisors in Amazon EC2 instances》 — https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-ec2-nested-virtualization.html
-5. Xen Wiki《Nested Virtualization in Xen》 — https://wiki.xenproject.org/wiki/Nested_Virtualization_in_Xen
-6. KVM arm64 NV 补丁（`KVM: arm64: nv: Configure HCR_EL2 for nested virtualization`, v10 系列，2023） — http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-May/833943.html
-7. KVM arm64 嵌套补丁系列（`[PATCH v11 00/43] KVM: arm64: Nested Virtualization support (FEAT_NV2 only)`，标题即证明只支持 NV2） — https://yhbt.net/lore/linux-arm-kernel/67082409-f432-44b6-bf40-1af9b4b7b569@os.amperecomputing.com/
-8. KVM/arm64 更新随 **Linux 6.16** 合并窗口合入的证据（kvmarm-6.16 merge tag / KVM pull request） — http://git.armlinux.org.uk/cgit/linux.git/log/?id=7f904ff6e58d398c4336f3c19c42b338324451f7&showmsg=1
-9. Arm 官方寄存器文档《VNCR_EL2, Virtual Nested Control Register, EL2》 — https://developer.arm.com/documentation/ddi0595/2021-03/AArch64-Registers/VNCR-EL2--Virtual-Nested-Control-Register
-10. Arm SMMUv3 架构规范 — https://documentation-service.arm.com/static/5f901081f86e16515cdc0919
-11. AMD Architecture Programmer's Manual Volume 2（VMCB / NPT / clean bits） — https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf
-12. Linux 补丁《iommu/amd: Introduce Nested Translation support》（AMD IOMMU 嵌套翻译） — https://patchew.org/linux/20250820113009.5233-1-suravee.suthikulpanit@amd.com/
-13. Linux 补丁《SMMUv3 Nested Stage Setup (IOMMU part)》 — http://yhbt.net/lore/kvmarm/20211209154046.GQ6385@nvidia.com/T/
-14. Intel® 64 and IA-32 Architectures Software Developer's Manual（VMX / EPT / VMCS shadowing） — https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
-15. Intel VT-d Scalable Mode "three-stage address translation" 相关公开文献 — https://www.freepatentsonline.com/y2022/0350714.html
-16. Firecracker 设计文档（KVM、jailer、seccomp、cgroup） — https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md
-17. LKML RFC 补丁系列《Support nested SNP KVM guests on Hyper-V》（RMP table、MSR 形式 rmpupdate/psmash） — https://lkml.iu.edu/hypermail/linux/kernel/2301.2/09448.html
-18. 本仓库既有笔记 — `docs/rust-kunpeng/agentenv-cubesandbox-comparison.md`、`docs/rust-kunpeng/cubesandbox-rust-analysis.md`
+5. Azure 文档《How to enable nested virtualization in an Azure VM》（含 Dv3/Ev3 支持说明；直连 learn.microsoft.com 失败，内容经 azure-docs 归档镜像核对） — https://learn.microsoft.com/en-us/azure/virtual-machines/windows/nested-virtualization
+6. Google Cloud 文档《About nested virtualization》（本次未能抓取，仅记录入口） — https://cloud.google.com/compute/docs/instances/nested-virtualization/overview
+7. Xen Wiki《Nested Virtualization in Xen》 — https://wiki.xenproject.org/wiki/Nested_Virtualization_in_Xen
+8. KVM arm64 NV 补丁（`KVM: arm64: nv: Configure HCR_EL2 for nested virtualization`, v10 系列，2023） — http://lists.openwrt.org/pipermail/linux-arm-kernel/2023-May/833943.html
+9. KVM arm64 嵌套补丁系列（`[PATCH v11 00/43] KVM: arm64: Nested Virtualization support (FEAT_NV2 only)`，标题即证明只支持 NV2） — https://yhbt.net/lore/linux-arm-kernel/67082409-f432-44b6-bf40-1af9b4b7b569@os.amperecomputing.com/
+10. kvmarm-6.16 merge tag（2025-05-26；**本稿未取得其正文，仅作时间线索**） — http://git.armlinux.org.uk/cgit/linux.git/log/scripts?id=7f904ff6e58d398c4336f3c19c42b338324451f7&showmsg=1
+10b. KVM/arm64 6.17 更新（2025-07；正文含 "Nested support for FEAT_RAS and FEAT_DoubleFault2"） — https://git.zx2c4.com/wireguard-linux/log/arch/arm64/kernel?showmsg=1
+11. Arm 官方寄存器文档《VNCR_EL2, Virtual Nested Control Register, EL2》 — https://developer.arm.com/documentation/ddi0595/2021-03/AArch64-Registers/VNCR-EL2--Virtual-Nested-Control-Register
+12. Arm SMMUv3 架构规范 — https://documentation-service.arm.com/static/5f901081f86e16515cdc0919
+13. AMD Architecture Programmer's Manual Volume 2（VMCB / NPT / clean bits） — https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf
+14. Linux 补丁《iommu/amd: Introduce Nested Translation support》（AMD IOMMU 嵌套翻译） — https://patchew.org/linux/20250820113009.5233-1-suravee.suthikulpanit@amd.com/
+15. Linux 补丁《SMMUv3 Nested Stage Setup (IOMMU part)》 — http://yhbt.net/lore/kvmarm/20211209154046.GQ6385@nvidia.com/T/
+16. Intel® 64 and IA-32 Architectures Software Developer's Manual（VMX / EPT / VMCS shadowing） — https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
+17. Intel VT-d Scalable Mode "three-stage address translation" 相关公开文献 — https://www.freepatentsonline.com/y2022/0350714.html
+18. Firecracker 设计文档（KVM、jailer、seccomp、cgroup） — https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md
+19. LKML RFC 补丁系列《Support nested SNP KVM guests on Hyper-V》（RMP table、MSR 形式 rmpupdate/psmash） — https://lkml.iu.edu/hypermail/linux/kernel/2301.2/09448.html
+20. 本仓库既有笔记 — `docs/rust-kunpeng/agentenv-cubesandbox-comparison.md`、`docs/rust-kunpeng/cubesandbox-rust-analysis.md`
 
-> **引用注意**：第 14、15 项为规范/专利索引页，本稿引用的是其描述的概念，未能逐页核对具体条款号；第 10、11 项为大部头 PDF，本稿只对其中嵌套/页表相关章节做了定位性引用；第 6–8 项为邮件列表/内核补丁归档。凡未逐条核对的，正文已相应标注「未能证实」或「待补」。
+> **引用注意**：第 16、17 项为规范/专利索引页，本稿引用的是其描述的概念，未能逐页核对具体条款号；第 12、13 项为大部头 PDF，本稿只对其中嵌套/页表相关章节做了定位性引用；第 8–10 项为邮件列表/内核补丁归档；第 5 项内容经归档镜像核对（直连官网失败）、第 6 项完全未能抓取。凡未逐条核对的，正文已相应标注「未能证实」或「待补」。
