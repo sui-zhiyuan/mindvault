@@ -74,9 +74,13 @@ KVM 官方文档《Nested VMX》给出的术语是理解所有实现的地基：
 | **VMCS link pointer** | VMCS 的 64 位控制字段，指向 shadow VMCS；启用 shadowing 后 L1 的 VMCS 访问被硬件重定向 | 同 VMCS shadowing | 需要 L0 保证 link pointer 合法性；KVM 有专门校验路径 | KVM nVMX |
 | **nested EPT（nEPT）** | L2 的两级翻译（GVA→GPA→HPA）在硬件上直通：硬件用 L1 的 EPT（EPT12/EPT02）继续走查。L0 只在 L1 的 EPT 页表自身被写入、或出现 MMIO/reserved bit/EPT misconfig 时介入 | Intel EPT（Nehalem 2008+） | TLB 未命中时二维走查次数翻倍；L0 需对 L1 的 EPT 页做写保护并在写入时 trap 更新 | KVM nVMX |
 | **VM-entry/exit 嵌套放大** | L2 的一次 exit 可能需要在 L0 与 L1 之间来回多次：L0 先处理，再通过 VM-entry 送到 L1；MSR bitmap、CR 访问、I/O、EPT violation 路径都可能各自放大 | 无（通用现象） | "一次 L2 exit 触发多次 L0 exit"是嵌套开销的主要来源；Turtles 观测到 L0 占用 CPU 从 2.28%→5.17% | 所有实现 |
-| **APICv 在嵌套下的限制** | APICv 依赖 virtual-APIC page 与 TPR threshold，嵌套时这些状态需要在 L0/L1 两侧一致；KVM 在嵌套场景对 APICv 的启用有额外约束 | APICv（Haswell+ 部分 SKU） | 不可用时中断投递退回较慢路径，中断密集负载受影响 | KVM nVMX |
+| **APICv 在嵌套下（常见误传更正）** | ⚠️ **Intel nVMX 的 L2 可以使用 APICv**：KVM 的 `prepare_vmcs02()` 从 vmcs12 取 VID / APIC-register virtualization / virtualize-x2APIC / posted-interrupt 等控制位并按 SDM 约束复刻到 vmcs02；而 `APICV_INHIBIT_REASON_NESTED` 这个原因位**只被 AMD 的 `svm/avic.c` 引用** → **"因嵌套而禁 APICv"是 AMD AVIC 的行为，不适用于 Intel**。Intel 侧四处真实退化：`enable_apicv=0` 整体关闭、所有 APICv 特性都要求 TPR shadow、L1 处于 "acknowledge interrupt on exit" 时不能用 RVI 注入、Linux 3.19 前 nested MSR 直接清掉 VID/APIC_REGISTER_VIRT | APICv（Haswell+ 部分 SKU）/ AVIC（Zen+） | Intel 侧退化有限；AMD 侧不可用时中断投递退回软件路径 | KVM nVMX / nSVM |
 
-> **待补**：VMCS shadowing 的具体能力位名称、nested EPT 的 shadow EPT 失效条件、KVM nVMX 明确不支持的 VMX 特性清单（posted interrupt / VMFUNC 等），需以 Intel SDM Vol 3C 与 KVM 源码/提交记录逐条核实后补入。当前稿对这部分标为**部分未证实**。
+> **功能子集（已落到 KVM 源码，替代本稿原先的「待补」）**：**不支持 L3**（`SECONDARY_EXEC_ENABLE_VIRTUALIZATION` 从不暴露给 L1）；**L2 的硬件 VMCS shadowing 不可用**（`prepare_vmcs02()` 显式清位，注释原文 "VMCS shadowing for L2 is emulated for now"，改由软件模拟 `cached_shadow_vmcs12`）；**PML 在 L2 恒为模拟**；**EPT-violation `#VE` 不暴露**；**VMFUNC 只暴露 EPTP switching，且 L1 自己不能用 VMFUNC**；MMIO 快路径/缓存对嵌套不可用（nGPA≠GPA）。
+>
+> 另两个反直觉点：VMCS shadowing **没有独立 CPUID 位**（只能查 `IA32_VMX_PROCBASED_CTLS2` 的 allowed-1 bit14 与 `IA32_VMX_MISC` bit29）；**硬件不支持时 KVM 仍向 L1 宣告该能力并自行模拟**（`nested_vmx_setup_secondary_ctls()` 注释原话："We can emulate VMCS shadowing, even if the hardware doesn't support it"）。
+>
+> 性能上补一个独立口径：NEVE(SOSP'17) §8 在**整机负载**口径实测 VMCS shadowing 带来**约 10%** 提升，与 Turtles 的 84.6%（**退出链成本**口径）并列而不矛盾。
 
 ### 2.3 AMD x86
 
@@ -88,7 +92,7 @@ KVM 官方文档《Nested VMX》给出的术语是理解所有实现的地基：
 | **nested NPT** | L1 的 NPT（由 `nested_cr3` 指定）被 L0 使用；L1 的 NPT 页表被写保护，写入时 trap 更新；NPT fault 需要在 L0/L1 间正确归属 | AMD NPT（Barcelona 2007+） | 与 nested EPT 同构：二维走查 + 页表写保护 | KVM nSVM |
 | **AVIC 嵌套限制** | AVIC（Advanced Virtual Interrupt Controller）在嵌套场景下的可用性受限，KVM 对嵌套与 AVIC 的启用组合有约束 | AVIC（Zen 及以后，需固件/平台支持） | 不可用时中断投递退回软件路径 | KVM nSVM |
 
-> **待补**：AMD nested 的最小 CPU/特性前提、AVIC 在嵌套下"禁用"的确切条件（内核代码与提交信息），当前稿标为**部分未证实**。
+> **待补**：AMD nested 的最小 CPU/特性前提；AVIC 在嵌套下的禁用条件已有线索（`APICV_INHIBIT_REASON_NESTED` 的引用面集中在 `svm/avic.c`），但逐条触发条件仍待内核源码确认。
 
 ### 2.4 软件模拟路径（无硬件嵌套支持时）
 
@@ -322,7 +326,7 @@ KVM 的 x86 shadow MMU 文档把要处理的三种翻译列得很清楚：
 1. **KVM nVMX / nSVM 的"不支持特性清单"需要逐条落到源码与 SDM 章节**：posted interrupt、VMFUNC、VMCS shadowing 是否暴露给 L1、L2 的 A/D 位、mode-based execution control 等。当前稿只有定性描述。
 2. **现代硬件上嵌套开销的可靠数字缺失**：需要一条可在自有环境复现的基准（L0/L1/L2 三层，分别测 CPU、内存带宽、4K/顺序磁盘、网络 PPS、中断密集），否则"嵌套开销 X%"的说法无法引用。
 3. **ARMv8.4-NV 的实际收益**：`VNCR_EL2` 把虚拟 EL2 寄存器重定向到内存后，哪些负载受益最大？与 trap-and-emulate 的差值是多少？
-4. **AVIC / APICv 在嵌套下到底何时可用**：需要内核代码与提交记录的确切条件，以及不可用时对中断延迟的量化影响。
+4. **AVIC / APICv 在嵌套下到底何时可用**：**已部分解决**——Intel 侧 L2 可用 APICv，"因嵌套禁 APICv"只适用于 AMD AVIC（详见 §2.2 的更正行）；**仍需** AMD 侧逐条触发条件与不可用时对中断延迟的量化影响。
 5. **机密计算与嵌套的组合边界**：AMD SEV-SNP 已有"Hyper-V 上跑嵌套 SNP guest"的 RFC 补丁（见 3.3），但 Intel TDX 的嵌套 TD 支持状态**未能证实**；两者是否允许 guest hypervisor 为其 L2 提供同等保护，需以 Intel/AMD 官方文档核实。
 6. **设备侧第三级翻译的实际落地程度**：Intel VT-d Scalable Mode 的三级翻译、AMD IOMMU nested translation（HWPT-based vs vIOMMU-based 两条路线）、ARM SMMUv3 nested stage 的主线状态。
 7. **dirty logging × 大页 × 嵌套三者的相互削弱**：`->disallow_lpage` 机制在多层场景下的累积效应缺少实测。

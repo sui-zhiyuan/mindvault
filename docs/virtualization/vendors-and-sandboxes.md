@@ -55,11 +55,11 @@
 
 | 厂商 | 架构 | 卸载了什么 | 备注 |
 |---|---|---|---|
-| **AWS** | **Nitro System** | **Nitro Cards**（Annapurna SoC；主卡 Controller 是硬件信任根与对 EC2/EBS/VPC 控制面的唯一网关；VPC/EBS/NVMe 专用卡做硬件加解密，近三代 VPC 卡可透明 AES-256-GCM 加密实例间流量）+ **Nitro Security Chip**（拦截所有固件写、控制主 CPU/BMC 复位引脚，**裸金属模式下替代 hypervisor 保护固件**）+ **Nitro Hypervisor**（无网络栈、无文件系统、无外设驱动、无 shell，支持整机在线热更新） | **"Nitro Hypervisor 基于 KVM"未在官方白皮书中出现** → 广泛报道但**厂商未证实** |
+| **AWS** | **Nitro System** | **Nitro Cards**（Annapurna SoC；主卡 Controller 是硬件信任根与对 EC2/EBS/VPC 控制面的唯一网关；VPC/EBS/NVMe 专用卡做硬件加解密，近三代 VPC 卡可透明 AES-256-GCM 加密实例间流量）+ **Nitro Security Chip**（拦截所有固件写、控制主 CPU/BMC 复位引脚，**裸金属模式下替代 hypervisor 保护固件**）+ **Nitro Hypervisor**（无网络栈、无文件系统、无外设驱动、无 shell，支持整机在线热更新） | 官方原文称 hypervisor 现为 "an **optional discrete component**"（这是裸金属实例的技术前提）；**"Nitro Hypervisor 基于 KVM"未在官方白皮书中出现** → 广泛报道但**厂商未证实** |
 | **AWS（轻量化）** | **Firecracker** | Rust 实现、基于 KVM、仅 5 个模拟设备（virtio-net/block/vsock、串口、最小键盘控制器） | Lambda / Fargate 底座 |
 | **Microsoft** | **Azure Boost** | 网络与存储处理卸载到**可编程 FPGA + 自研 MANA 网卡**；网络 200 Gbps 起；远端盘 14 GB/s / 75 万 IOPS，本地盘 36 GB/s / 660 万 IOPS；**Cerberus 芯片作独立硬件信任根**（NIST 800-193）；官方称"**Rust 为所有新代码首选语言**" | |
-| **阿里云** | **神龙 X-Dragon** | MOC 卡 + X-Dragon Hypervisor + 服务器硬件架构；2017-10 首款产品、2018-05 公开架构；弹性裸金属 | 支持 x86/ARM/Power/国产 CPU；后续代际与 MOC 最新规格未证实 |
-| **华为云** | **擎天 QingTian** | QingTian Cards（专用 ASIC、独立供电、硬件信任根、IO 加解密）+ 精简 QingTian Hypervisor | 白皮书 2025-10 更新；2017 年首发实例；一套架构同时支持虚机/裸机/容器 |
+| **阿里云** | **神龙 X-Dragon** | MOC 卡 + X-Dragon Hypervisor + 服务器硬件架构；2017-10 首款产品、2018-05 公开架构；弹性裸金属 | 支持 x86/ARM/Power/国产 CPU；官方宣传"无任何虚拟化开销"、兼容第三方 Hypervisor；**硬限制：官方限制页写明仅弹性裸金属服务器与超级计算集群支持二次虚拟化，其他规格族不支持安装虚拟化软件与二次虚拟化**；后续代际与 MOC 最新规格未证实 |
+| **华为云** | **擎天 QingTian** | QingTian Cards（专用 ASIC、独立供电、硬件信任根、IO 加解密）+ 精简 QingTian Hypervisor | 白皮书 2025-10 更新；2017 年首发实例；一套架构同时支持虚机/裸机/容器；官方称服务器资源 **100%** 呈现给租户 |
 | **腾讯云** | **CubeSandbox** | rust-vmm + KVM；CubeHypervisor = Cloud Hypervisor fork；Apache 2.0 | 面向 AI Agent 沙箱，见 `docs/rust-kunpeng/cubesandbox-rust-analysis.md` |
 | **Google Cloud** | KVM（自研组件未证实）+ **gVisor** | gVisor 是**用户态应用内核**（OCI 运行时 `runsc`），官方明确否认它是 VM、seccomp 过滤器或 AppArmor 包装 | 另有 Confidential VM、Shielded VM、Confidential GKE Nodes、Google Cloud VMware Engine |
 

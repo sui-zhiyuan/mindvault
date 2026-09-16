@@ -241,6 +241,42 @@ USENIX 的正文与 slides 均为 `application/pdf`，本环境的 `web_fetch` *
 
 ---
 
+## 验证项 7：嵌套虚拟化的三处口径修正与新增量化（第二批补充）
+
+来自多层分册的第二轮深挖（Intel nVMX 细节 + DPU/性能两条流）。三条是**修正**，其余是**新可引用量化**。
+
+**修正 1（最重要，属常见误传）**："嵌套下 APICv 不可用"**只对 AMD AVIC 成立**。
+Intel nVMX 的 L2 **可以**用 APICv（`prepare_vmcs02()` 从 vmcs12 复刻 VID / APIC-register virtualization /
+virtualize-x2APIC / posted-interrupt 等控制位）；而 `APICV_INHIBIT_REASON_NESTED` 只被
+`arch/x86/kvm/svm/avic.c` 引用。→ 已更正 `02` 稿 §2.2 与正式笔记 §七。
+
+**修正 2**：Turtles 的 **6–8%** 是摘要中**带 DRW 优化的最佳值**；正文未优化值是
+**14.5%（kernbench）/ 7.8%（SPECjbb）**。正式笔记已加"引用口径必须区分"的提示框。
+
+**修正 3**：VMCS shadowing **没有独立 CPUID 位**（查 `IA32_VMX_PROCBASED_CTLS2` allowed-1 bit14 与
+`IA32_VMX_MISC` bit29）；且**硬件不支持时 KVM 仍向 L1 宣告该能力并自行模拟**
+（`nested_vmx_setup_secondary_ctls()` 注释原话："We can emulate VMCS shadowing, even if the hardware doesn't support it"）。
+另有一个**独立口径**的数字：NEVE(SOSP'17) §8 在整机负载口径实测 **约 10%** 提升，
+与 Turtles 的 84.6%（**退出链成本**口径）并列而不矛盾——量的是不同的东西，引用时须写明口径。
+
+**新增可引用量化（均有出处）**：
+
+| 来源 | 数字 |
+|---|---|
+| ATC'25 *HyperTurtle* | 每次 L2 exit **≥4 次 world switch**（非嵌套 2 次）；EPT fault 最多 **6 次**；EPT fault 延迟平均 **5.1×**、p99 **5.3×**；Kata 启动 **0.7 s → 1.5 s**（EPT 缺页占比 14% → **46%**）；Nested-VirtIO → Direct-Assignment 时延 −40%、吞吐 +44% |
+| NEVE（SOSP'17，ARM） | ARMv8.3 trap-and-emulate：Hypercall **155×/113×**、Virtual IPI **>73×/59×**、Memcached **>40×**；改 NEVE 后微基准最高 5×、Memcached **<3×**。⚠️ **测试平台没有 NV 硬件**，论文自述数字仅用于相对比较 |
+| Turtles 细节 | L2 一次 `cpuid` ≈ **58,000 cycles**（单层 ≈2,600、裸机 ≈100，≈单层 22×）；一次 PIO exit 平均引发 **31 次额外 exit**；kernbench 对**裸机** **+25.3%** |
+| VMware KB 2009916 | **生产环境不支持嵌套 ESXi**，原文理由 "strict real-time constraints that cannot always be met in a virtualized environment" |
+| Xen 官方 wiki | 嵌套的 stress test 与 performance test 均为 **"Not Tested"** → **Xen 从未公布嵌套性能数据**（可作负面证据） |
+| KVM 源码 | nVMX 功能子集：**无 L3**、**L2 的 VMCS shadowing 为软件模拟**、**PML 恒模拟**、**无 `#VE`**、**VMFUNC 仅 EPTP switching 且 L1 不能用**、MMIO 快路径不可用 |
+| 阿里云官方限制页 | **仅弹性裸金属服务器与超级计算集群支持二次虚拟化**，其他规格族不支持 |
+| AWS 白皮书 | hypervisor 现为 "an **optional discrete component**"（裸金属实例的技术前提） |
+
+**仍未证实**：ARMv8.4-NV 的**真实硬件**实测（NEVE 全部数字来自 ARMv8.0 上的 paravirt 模拟）；
+Xen / Azure / GCP 的嵌套性能；Google Titanium 的数字；EPT A/D 位与 MBEC 的引入代际。
+
+---
+
 ## 参考资料
 
 | 来源 | URL | 访问日期 | 可靠性 |

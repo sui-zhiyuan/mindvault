@@ -98,7 +98,29 @@
 | 纯软件模拟 | 软件影子维护多层 VMCS + multi-dimensional paging 把 3 级压进 2 级 | 无特殊要求 | 常见负载 6–8%；朴素做法"至少慢 3 倍" |
 | 裸金属 + DPU | 取消 L0 或把 I/O 卸载到卡上，让客户 hypervisor 当 L0 | AWS Nitro / 神龙 MOC / 擎天卡 | 无 exit 放大，但绑定厂商硬件 |
 
-**Turtles（OSDI 2010）实测**（KVM 同时作 L0/L1、x86 无嵌套硬件支持）：相对单层虚拟化，kernbench 开销 **14.5%**、SPECjbb 得分 **−7.82%**；扣除 `VMREAD/VMWRITE` 后为 **10.3% / 6.3%**；**L0 自身 CPU 占用从 2.28% 升到 5.17%**——"多一层"放大的是**宿主开销**。论文摘要自述常见负载可做到"**within 6-8% of single-level virtualization**"。I/O 侧代价远大于 CPU：netperf 64B 消息，裸机 900 Mb/s 时 L2 + multi-level device assignment 为 837 Mb/s（约 −7%），而 virtio-on-direct 仅 469 Mb/s（−50%）。
+**Turtles（OSDI 2010）实测**（KVM 同时作 L0/L1、x86 无嵌套硬件支持）：相对单层虚拟化，kernbench 开销 **14.5%**、SPECjbb 得分 **−7.82%**；扣除 `VMREAD/VMWRITE` 后为 **10.3% / 6.3%**；**L0 自身 CPU 占用从 2.28% 升到 5.17%**——"多一层"放大的是**宿主开销**。相对**裸机**则是 kernbench **+25.3%**。
+
+> ⚠️ **引用这些数字时必须区分口径**：论文摘要中的 "within **6-8%** of single-level virtualization" 是**带 DRW 优化后的常见负载最佳值**；正文未优化的逐项值是 **14.5% / 7.8%**。只引 6–8% 会被质疑，只引 14.5% 则不公。
+
+I/O 侧代价远大于 CPU：netperf 64B 消息，裸机 900 Mb/s 时 L2 + multi-level device assignment 为 837 Mb/s（约 −7%），而 virtio-on-direct 仅 469 Mb/s（−50%）。
+
+**"exit 放大"现在有可引用的量化**（ATC'25, HyperTurtle）：
+
+| 指标 | 非嵌套 | 嵌套（L2） |
+|---|---|---|
+| 每次 VM exit 的 world switch 次数 | 2 | **≥4** |
+| EPT fault 次数 | — | **最多 6 次** |
+| EPT fault 延迟 | 1× | 平均 **5.1×**、p99 **5.3×** |
+| Kata 启动时间 | 0.7 s | **1.5 s**（其中 EPT 缺页占比 14% → **46%**） |
+| 网络 Nested-VirtIO → Direct-Assignment | — | 时延 **−40%**、p99 **−37%**、吞吐 **+44%** |
+
+另有两个细节数字：L2 执行一次 `cpuid` 约 **58,000 cycles**（单层约 2,600、裸机约 100，约为单层的 **22×**）；一次 PIO exit 平均引发 **31 次额外 exit**。
+
+**ARM 上 trap-and-emulate 的代价，正是 FEAT_NV2 存在的理由**（NEVE, SOSP'17；测试平台**没有 NV 硬件**，故以半虚拟化模拟来对比相对代价）：Hypercall **155×**（nVHE）/ **113×**（VHE）、Virtual IPI **>73× / 59×**、Memcached 网络负载 **>40×**；改用 NEVE（面向 ARMv8.4 的 paravirt 方案）后微基准最高降到 **5×**、Memcached 从 >40× 降到 **<3×**。
+
+**功能子集是真实存在的**（KVM nVMX 已落到源码的具体项）：**不支持 L3**（`SECONDARY_EXEC_ENABLE_VIRTUALIZATION` 从不暴露给 L1）；**L2 的硬件 VMCS shadowing 不可用**（`prepare_vmcs02()` 显式清位，注释写明 "VMCS shadowing for L2 is emulated for now"，改由软件模拟）；**PML 在 L2 恒为模拟**；**EPT-violation `#VE` 不暴露**；**VMFUNC 只暴露 EPTP switching，且 L1 自己不能用 VMFUNC**；MMIO 快路径缓存对嵌套不可用。
+
+**厂商侧的官方态度**：VMware KB 2009916 明确**生产环境不支持嵌套 ESXi**，理由原文 "ESXi has strict real-time constraints that cannot always be met in a virtualized environment"（比历史上"VMware Server 作 L1"的性能数据更有力）；Xen 官方 wiki 把嵌套的 **stress test 与 performance test 列为 "Not Tested"**——**Xen 从未公布嵌套性能数据**。
 
 **解决什么问题**：云上跑 KVM/Hyper-V、Docker Desktop、WSL2、CI 里跑模拟器或测试 hypervisor、VDI 与教学实验、云上 Android 模拟器、Kata/gVisor 的分层部署。**三家云官方都把嵌套定位为开发/测试能力，并一致提供"逃逸"路径——建议性能敏感场景改用裸金属实例。**
 
@@ -128,6 +150,10 @@
 | 设备隔离 | VT-d（2008）+ SR-IOV/ACS | AMD-Vi（2007） | SMMUv2/v3 | DMA 翻译与隔离 | **无 IOMMU 就不能安全直通**（设备可对任意物理地址 DMA） |
 | PMU / 追踪 / 分区 | — | — | PMUv3 虚拟化（`MDCR_EL2`）、SPE(8.2)、TRBE(8.4)、MPAM(8.4) | 多租户可观测性与 QoS | guest 无 `perf`/剖析；无法隔离 LLC 与带宽 |
 | 机密计算 | SGX、TDX（Sapphire Rapids，2023 GA） | SEV(2017) → SEV-ES → **SEV-SNP（Zen 3/EPYC 7003, 2021）** | TrustZone、RME/Arm CCA（Armv9） | 把宿主移出信任边界 | 多租户场景无法对云厂商保密 |
+
+**一条常见误传的更正**：**"嵌套下 APICv 不可用"只对 AMD AVIC 成立，不适用于 Intel nVMX**。Intel 侧 L2 **可以**使用 APICv——KVM 的 `prepare_vmcs02()` 会从 vmcs12 取 VID / APIC-register virtualization / virtualize-x2APIC / posted-interrupt 等控制位，并按 SDM 约束复刻到 vmcs02；而 `APICV_INHIBIT_REASON_NESTED` 这个"因嵌套而抑制"的原因位**只被 AMD 的 `svm/avic.c` 引用**。Intel 侧真实的退化有四处：`enable_apicv=0` 时整体关闭；所有 APICv 特性都要求 TPR shadow 存在；L1 处于 "acknowledge interrupt on exit" 时不能用 RVI 注入；Linux 3.19 之前嵌套 MSR 会直接清掉 VID/APIC_REGISTER_VIRT。
+
+**VMCS shadowing 的两个反直觉点**：它**没有独立 CPUID 位**（只能查 `IA32_VMX_PROCBASED_CTLS2` 的 allowed-1 bit14 与 `IA32_VMX_MISC` bit29）；而且**硬件不支持时 KVM 仍向 L1 宣告该能力并自行模拟**（`nested_vmx_setup_secondary_ctls()` 注释原话："We can emulate VMCS shadowing, even if the hardware doesn't support it"）。性能上另有一个独立口径的数字：NEVE（SOSP'17）§8 在**整机负载**口径下实测 VMCS shadowing 带来 **约 10%** 提升，可与 Turtles 的 84.6%（**退出链成本**口径）并列——两者不矛盾，量的是不同的东西。
 
 > ⚠️ 标注 ⚠ 的项存在来源分歧或未证实：EPT A/D 位的首发代际（QEMU 自 Broadwell 起标，Linux 2017 才加 MMU 支持）、MBEC/Bus Lock Detection 的代际、HLAT 的服务器首发代际、AMD GMET 的引入代际。
 
@@ -206,3 +232,7 @@ CPU 密集负载上现代硬件虚拟化开销是低个位数百分比，差距�
 17. Intel SDM Vol 3C/3D（VMX / EPT / VMCS shadowing）、AMD APM Vol 2（VMCB / NPT / AVX） — https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
 18. Arm《AArch64 virtualization》与 `VNCR_EL2` 寄存器文档 — https://developer.arm.com/documentation/102142/latest/
 19. 本仓库中间调研稿：`research/virtualization/01-history-and-overhead.md`、`02-multilayer-virtualization.md`、`03-hw-capabilities-x86.md`、`04-hw-capabilities-arm-kunpeng.md`、`08-verification-notes.md`
+20. *NEVE: Nested Virtualization Extensions for ARM*, SOSP 2017（ARMv8.3 trap-and-emulate 嵌套的实测代价；ARMv8.4-NV 的真实硬件数据本次仍未能取得） — https://dl.acm.org/doi/10.1145/3132747.3132757
+21. *HyperTurtle*, ATC'25（嵌套下 world switch 次数、EPT fault 次数与延迟的量化）
+22. VMware KB 2009916（**生产环境不支持嵌套 ESXi** 及其理由原文） — https://kb.vmware.com/s/article/2009916
+23. Linux KVM 源码：`arch/x86/kvm/vmx/nested.c`（`prepare_vmcs02()`、`nested_vmx_setup_secondary_ctls()`，功能子集与注释）、`arch/x86/kvm/svm/avic.c`（`APICV_INHIBIT_REASON_NESTED` 的唯一引用处） — https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/x86/kvm/
