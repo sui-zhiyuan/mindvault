@@ -652,3 +652,22 @@ Windows: ACL restricted-token runner
 - `docs/rust-kunpeng/rust-application-patterns.md` —— 结论 2（基础设施 C/C++ → Rust 迁移不可逆，含 CubeSandbox 一行）与结论 4（Rust 作为"安全边界封装层"，含 seccompiler 一行）。
 - `research/virtualization/07-existing-notes-map.md` —— microVM 快照/CoW 是 KVM 架构红利；AgentENV 的 CoW 在虚拟化层、CubeSandbox 的 CoW 在文件系统层。
 - `research/virtualization/08-verification-notes.md` —— 鲲鹏 920 嵌套虚拟化（FEAT_NV2 缺失）与软件虚拟化损耗分档；**本文不重复**。
+
+---
+
+## 补充（第三批证据已并入正式笔记，本文相应结论以正式笔记为准）
+
+第三批"逃逸/误区"专题证据返回时本会话已合并回 `master`、写入门禁生效，故**未回写本文件**，
+而是直接并入了 `docs/virtualization/vendors-and-sandboxes.md`。以下三处**本文的旧表述已被正式笔记取代**：
+
+1. **"容器 ≠ 沙箱"**：本文原以 CVE 举证；正式笔记升级为**标准机构定性**——NIST SP 800-190 §3.5.2
+   （共享内核 "larger inter-object attack surface than seen with hypervisors"；容器隔离 "not as high as that
+   provided by hypervisors"）与 Kubernetes 官方多租户文档（容器是 "weaker isolation boundary"），
+   并把逃逸 CVE 扩到 8 项（含 BuildKit **CVE-2024-23652，CVSS 10.0**）。
+2. **"seccomp 挡不住内核漏洞"**：本文原只有 crosvm 一条旁证；正式笔记补上**内核官方文档的直接否定**
+   （"System call filtering isn't a sandbox."，本次已逐字抓取核实）、**io_uring 使 seccomp 失去可见性**、
+   TSYNC 竞态绕过（CVE-2026-89603）与 25%/15% 的开销实测。
+3. **两处"未能证实"已可回填**：gVisor 兼容性有官方具体清单（沙箱内 cgroup 只记账不限额、不支持
+   fat32/ext3/ext4 挂载、**io_uring 默认禁用**、**沙箱内跑 KVM 不受支持**、GPU 需 `--nvproxy` 且严格匹配驱动）；
+   **ptrace 平台已被 systrap 取代、现不再支持并将移除**（本文原写法偏保守）。另新增 WASM 真实逃逸 CVE 与
+   microVM 逃逸的表述纪律（尚无公开 guest→host 逃逸 CVE，但硬件侧信道不受 microVM 边界保护）。
