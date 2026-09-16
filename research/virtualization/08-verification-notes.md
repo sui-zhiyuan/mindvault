@@ -165,8 +165,22 @@
   （Arm developer 文档站抓取被重定向到 support.arm.com 而失败）。
   汇总稿写法应为"分 FEAT_NV / FEAT_NV2 两代（KVM 早期系列题为 ARMv8.3/8.4）"，
   **不要**写成"FEAT_NV 是 ARMv8.3"这类定点断言。
-- 合入时间（已验证）：**Linux 6.16**，`Merge tag 'kvmarm-6.16'`，2025-05-26。
-  → 与 x86 的 KVM 嵌套（**Linux 3.1，2011**）相差约 **14 年**。
+- 合入时间（**部分证实；我自己先前的"已核实 6.16"属过度断言，此处降级**）：
+  - **已证实**：v11（2023-11）仍在评审阶段，Zyngier 当时的目标是"把本系列的一个前缀带进 6.8"
+    → 说明**到 6.8 为止，完整支持尚未进入主线**。
+  - **已证实**：**6.17（2025-07）的 KVM/arm64 合并说明把 "Nested support for FEAT_RAS and FEAT_DoubleFault2"
+    列为新特性**（原文：*"Nested support for FEAT_RAS and FEAT_DoubleFault2, allowing the guest hypervisor to
+    inject external aborts into an L2 VM"*）——这是在**既有嵌套支持之上追加能力**，
+    说明**基础嵌套支持早于 6.17**。
+  - **未逐条核实**：`Merge tag 'kvmarm-6.16'`（2025-05-26）。我尝试从 KernelNewbies 的 Linux 6.16 页、
+    Elixir 源码交叉引用、以及 git 日志三处取证，**均未取得该 merge 的正文**；
+    只能确认 `arch/arm64/kvm/nested.c` 在 v6.16 中**存在**，而该文件可能由更早的铺垫补丁引入
+    （v11 cover letter 明确说 "NV trap forwarding, per-MMU VTCR" 等补丁**已经合并**）。
+    → 因此**"基础支持在 6.16 合入"降级为待核实**。
+  - **可安全写进定稿的表述**：上游 arm64 的嵌套虚拟化（FEAT_NV2）**直到 2025 年才进入主线** ——
+    2023 年底仍在评审；2025-07 的 6.17 已在其之上追加 FEAT_RAS/DoubleFault2 的嵌套支持。
+  - → 与 x86 的 KVM 嵌套（**Linux 3.1，2011**）相差约 **14 年**。
+    这个量级（2025 vs 2011）**不依赖"具体是 6.16 还是 6.17"**，因此结论稳健。
 - 对鲲鹏的含义不变且更强：鲲鹏 920 = **ARMv8.2**，连 FEAT_NV 都不具备 → **无任何硬件嵌套路径**。
 
 ---
