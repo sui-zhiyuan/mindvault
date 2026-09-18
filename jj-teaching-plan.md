@@ -20,7 +20,7 @@
 - **命令由学习者亲手敲**：讲师只给命令、预期输出形态和验收标准，不代跑操作（除非学习者明确要求）。
 - **报错原样贴回**：不做二次转述，讲师据此判断真实卡点。
 - **计划即进度**：本文件下方的「进度表」由讲师在每步完成后更新。
-- 实验目录：`/home/suine/projects/jj-playground`（学习者自建）；**不在真实项目仓库（如 mindvault）里试错**。
+- 实验目录：`/home/suine/projects/jj-playground`（日常操作）、`/home/suine/projects/jj-graph`（M2 起的图谱 / revset 练习）；**不在真实项目仓库（如 mindvault）里试错**。
 
 ## 概念映射总表（Git → jj）
 
@@ -53,14 +53,17 @@
 - 验收记录（2026-09-17）：change id / commit id / `@` / `@-` / `root()` 五项理解正确；
   **`(empty)` 的含义需修正** —— 它是“该提交内容与其父相同”，不是“最早祖先提交”。
 
-### M1 第一次提交与快照模型（进行中）
+### M1 第一次提交与快照模型（已完成 2026-09-18）
 
 - 学习目标：彻底理解“工作副本即 commit”“无暂存区”“description 与 change id 的稳定性”。
 - 涉及命令族：`touch`/`echo` 建改文件、`jj st`、`jj diff`、`jj describe`、`jj new`。
 - 验收标准：能预测每条 jj 命令之后 change id / commit id 各自是否变化，并说明原因。
 - 交付物：改动前后两次 `jj log`，以及“哪个 id 变了、为什么”的说明。
+- 验收记录（2026-09-18）：`(empty)` 已修正；change id / commit id 的“身份 vs 哈希”已理解；
+  `jj squash` 语义先答错、后自行纠正为“目标提交保留 change id 但 commit id 变化，
+  新建的 `@` 是新 change，源提交变 hidden”。
 
-### M2 历史查看与 revset 入门
+### M2 历史查看与 revset 入门（进行中）
 
 - 学习目标：掌握 `jj log/show/diff/file annotate`；能用 revset 表达“我自己的、带描述的、最近 N 个”这类查询。
 - 涉及命令族：`jj log -r`、`jj show`、`jj diff -r/--from/--to`、`jj file annotate`、`jj evolog`；revset 运算符 `@ - + :: .. | & ~` 与函数 `trunk() bookmarks() mine() description()`。
@@ -106,8 +109,8 @@
 | 模块 | 状态 |
 |---|---|
 | M0 准备与建仓 | 已完成 |
-| M1 第一次提交与快照模型 | 进行中 |
-| M2 历史查看与 revset 入门 | 未开始 |
+| M1 第一次提交与快照模型 | 已完成 |
+| M2 历史查看与 revset 入门 | 进行中 |
 | M3 改写历史与自动 rebase | 未开始 |
 | M4 回到历史版本与 undo | 未开始 |
 | M5 多人协作 | 未开始 |
