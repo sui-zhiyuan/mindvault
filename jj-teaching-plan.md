@@ -20,7 +20,7 @@
 - **命令由学习者亲手敲**：讲师只给命令、预期输出形态和验收标准，不代跑操作（除非学习者明确要求）。
 - **报错原样贴回**：不做二次转述，讲师据此判断真实卡点。
 - **计划即进度**：本文件下方的「进度表」由讲师在每步完成后更新。
-- 实验目录：`/home/suine/projects/jj-playground`（日常操作）、`/home/suine/projects/jj-graph`（M2 起的图谱 / revset 练习）；**不在真实项目仓库（如 mindvault）里试错**。
+- 实验目录：`/home/suine/projects/jj-playground`（学习者自建，M1 与 M2 的图都在这里）；**不在真实项目仓库（如 mindvault）里试错**。
 
 ## 概念映射总表（Git → jj）
 
