@@ -46,6 +46,7 @@
 
 - [运维 / 集群协作](ops/README.md)
   - [高性能服务器多人 SSH 资源协作（numa-session）高层设计](ops/numa-ssh-multiuser-design.md)
+  - [SSH Session / NUMA 占用协调工具设计（无守护进程变体）](ops/ssh-numa-slot-design.md)
 
 - [探索性学习](learning/README.md)
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)
