@@ -48,3 +48,6 @@
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)
   - [de Bruijn 序列](learning/de-bruijn-sequence.md)
   - [类似 de Bruijn 序列的"专一"算法](learning/specialized-niche-algorithms.md)
+
+- [LLM 与大模型](llm/README.md)
+  - [Claude 模型档位：Fable / Opus / Sonnet / Haiku](llm/claude-model-tiers.md)
