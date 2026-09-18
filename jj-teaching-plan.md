@@ -63,14 +63,18 @@
   `jj squash` 语义先答错、后自行纠正为“目标提交保留 change id 但 commit id 变化，
   新建的 `@` 是新 change，源提交变 hidden”。
 
-### M2 历史查看与 revset 入门（进行中）
+### M2 历史查看与 revset 入门（已完成 2026-09-18）
 
 - 学习目标：掌握 `jj log/show/diff/file annotate`；能用 revset 表达“我自己的、带描述的、最近 N 个”这类查询。
 - 涉及命令族：`jj log -r`、`jj show`、`jj diff -r/--from/--to`、`jj file annotate`、`jj evolog`；revset 运算符 `@ - + :: .. | & ~` 与函数 `trunk() bookmarks() mine() description()`。
 - 验收标准：给出自然语言需求，能独立写出对应 revset 并解释结果。
 - 交付物：至少 3 条自写 revset 及其输出。
+- 验收记录（2026-09-18）：`heads(all())`、`bookmarks() ~ ::main`、`@ | @-` 三条自写 revset 均正确；
+  `all()` 与默认 `jj log` 在该图里重合的原因（默认 = `present(@) | ancestors(immutable_heads().., 2) | trunk()`）已讲解。
+  遗留修正：被 abandon 的提交只写了 `(hidden)`，漏了 **change offset** —— 单独用 `<change id>` 会报
+  `doesn't exist`，必须写 `<change id>/<offset>`（实测 `<change id>/0` 才显示 `(hidden)`）。
 
-### M3 改写历史与自动 rebase
+### M3 改写历史与自动 rebase（进行中）
 
 - 学习目标：掌握 `squash/split/diffedit/describe/edit/abandon`；亲眼验证“改写一个 commit，后代自动 rebase”。
 - 涉及命令族：上述命令 + `jj next/prev`、`jj log` 观察拓扑变化。
@@ -110,8 +114,8 @@
 |---|---|
 | M0 准备与建仓 | 已完成 |
 | M1 第一次提交与快照模型 | 已完成 |
-| M2 历史查看与 revset 入门 | 进行中 |
-| M3 改写历史与自动 rebase | 未开始 |
+| M2 历史查看与 revset 入门 | 已完成 |
+| M3 改写历史与自动 rebase | 进行中 |
 | M4 回到历史版本与 undo | 未开始 |
 | M5 多人协作 | 未开始 |
 | M6 colocate 与 Git 互操作 | 未开始 |
