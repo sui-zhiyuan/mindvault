@@ -71,7 +71,9 @@ OUT_RAW="$(powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
   -Width "$WIDTH" -Height "$HEIGHT" -Render "$RENDER" 2>&1 || true)"
 
 # PowerShell mixes CLIXML progress noise into stderr; keep only our own lines.
-STATUS="$(printf '%s\n' "$OUT_RAW" | grep -a -E '^[A-Z_]+=' || true)"
+# It also writes CRLF, and a trailing CR would ride along inside every parsed
+# value below -- which silently breaks the paths this script hands back.
+STATUS="$(printf '%s\n' "$OUT_RAW" | grep -a -E '^[A-Z_]+=' | tr -d '\r' || true)"
 printf '%s\n' "$STATUS"
 
 if printf '%s\n' "$STATUS" | grep -qa '^STATUS=ERR_NO_SOURCE'; then
