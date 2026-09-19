@@ -90,6 +90,7 @@ TEXT_MD_WSL="${TEXT_MD_WSL//\\//}"
 PNG_DIR_WSL="$(wsl_of PNG_DIR)"
 PNG_DIR_WSL="${PNG_DIR_WSL//\\//}"
 WORKDIR_WSL="$(wsl_of WSL_WORKDIR)"
+COPY_WSL="$(wsl_of COPY_WSL)"
 
 if [ -n "$TEXT_MD_WSL" ]; then
   # C:\Users\... -> /mnt/c/Users/...
@@ -103,13 +104,18 @@ echo "---"
 [ -n "$TEXT_MD_WSL" ] && echo "text : $TEXT_MD_WSL"
 [ -n "$PNG_DIR_WSL" ] && echo "png  : $PNG_DIR_WSL"
 [ -n "$WORKDIR_WSL" ] && echo "work : $WORKDIR_WSL"
+[ -n "$COPY_WSL" ] && echo "copy : $COPY_WSL"
 
 if [ "$DUMP" = "1" ]; then
   echo "--- structured dump (python-pptx) ---"
   CACHE_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)/.dsh.local/uv-cache"
   mkdir -p "$CACHE_DIR"
+  # Read the COPY, never the original. python-pptx holds no lock after it exits,
+  # but routing every reader through the same private copy keeps the isolation
+  # rule absolute and easy to reason about.
+  DUMP_TARGET="${COPY_WSL:-$DECK_ABS}"
   UV_CACHE_DIR="$CACHE_DIR" uv run --no-project --with python-pptx -- \
-    python "$PY" "$DECK_ABS"
+    python "$PY" "$DUMP_TARGET"
 fi
 
 if [ -n "$OUT" ] && [ -n "$TEXT_MD_WSL" ]; then
