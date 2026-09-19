@@ -1,0 +1,5 @@
+# This checkout has core.autocrlf=true, which would rewrite these scripts with
+# CRLF endings. That breaks the shell entry point outright: bash reads the
+# shebang as "#!/usr/bin/env bash\r" and fails with "bad interpreter".
+# PowerShell only cares about the BOM, not the line ending, so LF is safe there.
+* text eol=lf
