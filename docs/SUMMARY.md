@@ -55,3 +55,6 @@
 
 - [LLM 与大模型](llm/README.md)
   - [Claude 模型档位：Fable / Opus / Sonnet / Haiku](llm/claude-model-tiers.md)
+
+- [游戏设计](game-design/README.md)
+  - [二战风格体素海战沙盒：技术分析与设计](game-design/ww2-naval-voxel-sandbox.md)
