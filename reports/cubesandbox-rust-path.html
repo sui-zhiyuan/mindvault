@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CubeSandbox · Start/Pause/Resume 的 Rust 环节与优化点</title>
+<style>
+  /* ── 配色对齐全篇既有页面：绿=Rust 青=非Rust用户态 橙=内核 粉=特殊 ── */
+  :root{
+    --green:#BEE7A6; --green-d:#8BD363;
+    --cyan:#A8E0E8;
+    --orange:#FFC492;
+    --pink:#FFB2B2;
+    --red:#C7000A;
+    --ink:#1A1A1A; --muted:#6E6E6E; --line:#D9D9D9; --panel:#F7F7F7;
+    --sans:'Microsoft YaHei','微软雅黑','PingFang SC','Noto Sans CJK SC',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:#eef1f4;font-family:var(--sans);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .canvas{width:1280px;height:720px;position:relative;transform-origin:center center;flex:0 0 auto;
+          box-shadow:0 8px 32px rgba(20,30,45,.18);}
+  .slide{position:absolute;inset:0;background:#fff;color:var(--ink);
+         padding:24px 40px 18px;overflow:hidden;font-variant-numeric:tabular-nums;}
+
+  /* ---------- 页眉：标题在上，红标签 + 浅灰面板在下 ---------- */
+  h1{margin:0;font-size:26px;font-weight:700;color:var(--red);line-height:1.2;}
+  .hdr{display:flex;align-items:stretch;margin-top:7px;border:1px solid var(--line);background:var(--panel);}
+  .tag{flex:0 0 60px;background:var(--red);color:#fff;font-size:13px;font-weight:700;
+       display:flex;align-items:center;justify-content:center;text-align:center;
+       line-height:1.3;letter-spacing:.06em;}
+  .hdr-body{padding:5px 12px;font-size:11.5px;line-height:1.5;}
+  .hdr-body b{color:var(--red);}
+
+  /* ---------- 三段时间线 ---------- */
+  .timeline{display:flex;gap:12px;margin-top:10px;}
+  .stagecol{flex:1;}
+  .stage-title{text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.04em;margin-bottom:4px;}
+  .stage-title span{font-weight:400;font-size:10.5px;color:var(--muted);margin-left:6px;}
+  .stage{border:1px solid #8C8C8C;background:#fff;}
+  .stage-body{padding:6px 7px;}
+
+  /* 每步：实色块（颜色=归属） + 左侧步骤名 + 右侧待填耗时槽 */
+  .chip{display:flex;align-items:center;height:25px;margin-bottom:2px;padding:0 4px 0 8px;font-size:10.5px;}
+  .chip:last-child{margin-bottom:0;}
+  .chip .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .star{color:var(--red);font-weight:700;margin-right:2px;}
+  .slot{flex:0 0 54px;height:16px;margin-left:7px;background:rgba(255,255,255,.82);
+        border:1px solid rgba(0,0,0,.22);display:flex;align-items:center;justify-content:flex-end;
+        padding-right:4px;font-size:9px;color:#9A9A9A;}
+  .chip.r{background:var(--green);}
+  .chip.m{background:var(--cyan);}
+  .chip.k{background:var(--orange);}
+  .chip.cgo{background:var(--pink);}
+  .chip.cgo .slot{border-color:rgba(140,26,26,.45);}
+
+  /* ---------- 指标条 ---------- */
+  .metrics{display:flex;gap:10px;margin-top:10px;}
+  .metric{flex:1;border:1px solid var(--line);padding:6px 11px;background:#fff;}
+  .metric.hi{border-color:var(--red);}
+  .m-val{font-size:18px;font-weight:700;color:var(--red);line-height:1.15;}
+  .m-val.mut{color:var(--muted);font-size:14.5px;}
+  .m-lab{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+
+  /* ---------- 优化点表 ---------- */
+  .sec{display:flex;align-items:baseline;gap:8px;margin:10px 0 4px;}
+  .sec h2{margin:0;font-size:13.5px;font-weight:700;color:var(--red);}
+  .sec .note{font-size:10.5px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px;}
+  thead th{background:#595959;color:#fff;font-weight:700;text-align:center;
+           padding:4px 8px;border:1px solid #404040;}
+  tbody td{padding:3px 8px;border:1px solid var(--line);line-height:1.38;vertical-align:middle;}
+  tbody td.no{text-align:center;font-weight:700;color:var(--red);}
+  tbody td.own{text-align:center;font-weight:700;color:#3E7A22;white-space:nowrap;}
+  tbody td.co{text-align:center;color:var(--muted);white-space:nowrap;}
+
+  /* ---------- 图例 + 页脚 ---------- */
+  .legend{display:flex;gap:15px;margin-top:7px;font-size:10.5px;align-items:center;flex-wrap:nowrap;}
+  .lg{display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  .sw{width:20px;height:12px;display:inline-block;border:1px solid #8C8C8C;}
+  .swf{width:34px;height:12px;display:inline-block;background:rgba(255,255,255,.82);
+       border:1px solid rgba(0,0,0,.3);}
+  .foot{display:flex;justify-content:space-between;margin-top:5px;font-size:9.5px;color:#A6A6A6;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="canvas" id="canvas">
+    <section class="slide active">
+
+      <h1>初步分析 Rust 占比，以及可能的优化点穿刺</h1>
+      <div class="hdr">
+        <div class="tag">应用<br>分析</div>
+        <div class="hdr-body">
+          Start / Pause / Resume 全路径 21 步中，<b>10 步为 Rust 直接环节</b>；内存快照、内存恢复、CubeCoW 磁盘快照三处关键路径均在 Rust 侧。
+          但 CubeCoW 经 <b>CGO 被节点侧 Go 组件调用</b>——这是 CubeSandbox 相对纯 Rust 方案独有的开销点。
+        </div>
+      </div>
+
+      <!-- ===== 三段时间线 ===== -->
+      <div class="timeline">
+
+        <div class="stagecol">
+          <div class="stage-title">Start<span>11 步</span></div>
+          <div class="stage"><div class="stage-body">
+            <div class="chip r"><span class="nm">API 接入 · CubeAPI</span><span class="slot">ms</span></div>
+            <div class="chip m"><span class="nm">编排选点 · CubeMaster</span><span class="slot">ms</span></div>
+            <div class="chip m"><span class="nm">模板镜像 · P2P 分发</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="star">★</span><span class="nm">MicroVM 创建 · CubeHypervisor</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="nm">Shim 集成 · CubeShim</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">KVM 创建 VM/vCPU · 内核</span><span class="slot">ms</span></div>
+            <div class="chip m"><span class="nm">Guest 启动 · cube-agent</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">网络策略下发 · CubeVS</span><span class="slot">ms</span></div>
+          </div></div>
+        </div>
+
+        <div class="stagecol">
+          <div class="stage-title">Pause<span>6 步</span></div>
+          <div class="stage"><div class="stage-body">
+            <div class="chip m"><span class="nm">编排触发 · AutoPause</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">冻结 vCPU · KVM</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="star">★</span><span class="nm">内存快照 · CubeHypervisor</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="nm">设备状态保存 · virtio</span><span class="slot">ms</span></div>
+            <div class="chip cgo"><span class="star">★</span><span class="nm">磁盘快照 · CubeCoW（CGO）</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">快照落盘 · 存储</span><span class="slot">ms</span></div>
+          </div></div>
+        </div>
+
+        <div class="stagecol">
+          <div class="stage-title">Resume<span>7 步</span></div>
+          <div class="stage"><div class="stage-body">
+            <div class="chip m"><span class="nm">编排触发 · AutoResume</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="star">★</span><span class="nm">内存恢复 · CubeHypervisor</span><span class="slot">ms</span></div>
+            <div class="chip cgo"><span class="star">★</span><span class="nm">reflink 恢复 · CubeCoW（CGO）</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="nm">设备状态恢复 · virtio</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">vCPU 恢复 · KVM</span><span class="slot">ms</span></div>
+            <div class="chip k"><span class="nm">网络策略重下发 · CubeVS</span><span class="slot">ms</span></div>
+            <div class="chip r"><span class="nm">就绪返回 · CubeAPI</span><span class="slot">ms</span></div>
+          </div></div>
+        </div>
+
+      </div>
+
+      <!-- ===== 指标条 ===== -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="m-val">10 / 21</div>
+          <div class="m-lab">Rust 直接环节占路径步骤</div>
+        </div>
+        <div class="metric">
+          <div class="m-val">~48%</div>
+          <div class="m-lab">CubeSandbox 代码 Rust 占比（官方口径）</div>
+        </div>
+        <div class="metric hi">
+          <div class="m-val">2 处</div>
+          <div class="m-lab">CGO 跨语言边界（CubeCoW ↔ Go）</div>
+        </div>
+        <div class="metric">
+          <div class="m-val mut">待埋点实测</div>
+          <div class="m-lab">Rust 环节的耗时占比（右侧留白处填写）</div>
+        </div>
+      </div>
+
+      <!-- ===== 优化点 ===== -->
+      <div class="sec">
+        <h2>可能的优化点穿刺</h2>
+        <span class="note">① 优先级最高——CubeSandbox 相对纯 Rust 方案独有的开销点</span>
+      </div>
+      <table>
+        <colgroup>
+          <col style="width:28px"><col><col style="width:100px">
+          <col style="width:134px"><col style="width:86px"><col style="width:70px">
+        </colgroup>
+        <thead>
+          <tr><th>#</th><th>优化点</th><th>阶段</th><th>对应指标</th><th>交付物</th><th>归属</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="no">①</td>
+            <td>削减 CGO 边界开销：CubeCoW 调用批量合并、避免跨边界内存拷贝</td>
+            <td>Pause / Resume</td><td>Pause / Resume 时间</td><td>回合上游</td>
+            <td class="own">我方主导</td>
+          </tr>
+          <tr>
+            <td class="no">②</td>
+            <td>XFS FICLONE reflink 在鲲鹏 NVMe + 64K 页下的开销验证</td>
+            <td>Pause / Resume</td><td>Pause / Resume 时间</td><td>实测报告</td>
+            <td class="co">协作（内核）</td>
+          </tr>
+          <tr>
+            <td class="no">③</td>
+            <td>页大小 4K/64K 调优：reflink 粒度 vs 元数据开销 vs 缺页次数</td>
+            <td>Resume</td><td>Resume 时间 / 内存密度</td><td>推荐配置方案</td>
+            <td class="co">协作（内核）</td>
+          </tr>
+          <tr>
+            <td class="no">④</td>
+            <td>快照数据路径 Arm 指令级优化（NEON / SVE，复用 Portable-Simd）</td>
+            <td>Pause / Resume</td><td>Pause / Resume 时间</td><td>回合上游</td>
+            <td class="own">我方主导</td>
+          </tr>
+          <tr>
+            <td class="no">⑤</td>
+            <td>模板制作与 P2P 镜像分发优化（官方模板制作约 15 分钟）</td>
+            <td>Start</td><td>Start 时间</td><td>回合上游</td>
+            <td class="own">我方主导</td>
+          </tr>
+          <tr>
+            <td class="no">⑥</td>
+            <td>AutoPause / AutoResume 触发策略调优：闲置判定阈值与挂起时机</td>
+            <td>三阶段</td><td>并发沙箱数</td><td>配置方案</td>
+            <td class="own">我方主导</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:#BEE7A6"></span>Rust 环节</span>
+        <span class="lg"><span class="sw" style="background:#A8E0E8"></span>非 Rust 用户态 / 混合栈</span>
+        <span class="lg"><span class="sw" style="background:#FFC492"></span>内核 / 非 Rust</span>
+        <span class="lg"><span class="sw" style="background:#FFB2B2"></span>CGO 边界 · 关键路径 ★</span>
+        <span class="lg"><span class="swf"></span>每步右侧留白处填写实测耗时（ms）</span>
+        <span style="margin-left:auto">来源：CubeSandbox 官方 README / 腾讯云开发者文档</span>
+      </div>
+      <div class="foot"><span>Huawei Confidential</span><span>6</span></div>
+
+    </section>
+  </div>
+</div>
+
+<script>
+  function fit(){
+    var c=document.getElementById('canvas');
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    c.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+</script>
+</body>
+</html>
