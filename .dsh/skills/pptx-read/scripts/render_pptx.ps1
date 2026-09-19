@@ -89,12 +89,45 @@ try {
           }
         }
       } catch {}
+
+      # A table's text does not live in the slide-level TextFrame, so reading
+      # only HasTextFrame silently drops every table on the slide -- exactly the
+      # content a reader most wants. Walk the cells instead.
+      try {
+        if ($sh.HasTable -eq -1) {
+          $tbl = $sh.Table
+          $rows = $tbl.Rows.Count
+          $cols = $tbl.Columns.Count
+          $found++
+          [void]$sb.AppendLine('### ' + $sh.Name + ' [TABLE ' + $rows + 'x' + $cols + ']')
+          for ($r = 1; $r -le $rows; $r++) {
+            $cells = @()
+            for ($c = 1; $c -le $cols; $c++) {
+              $cell = ''
+              try {
+                $cell = $tbl.Cell($r, $c).Shape.TextFrame.TextRange.Text
+                $cell = (($cell -replace "`r`n", ' ') -replace "`r", ' ' -replace "`n", ' ').Trim()
+                # An unescaped pipe would forge a column boundary.
+                $cell = $cell -replace '\|', '\|'
+              } catch {}
+              $cells += $cell
+            }
+            [void]$sb.AppendLine('| ' + ($cells -join ' | ') + ' |')
+          }
+          [void]$sb.AppendLine()
+        }
+      } catch {}
     }
     if ($found -eq 0) { [void]$sb.AppendLine('(no text shapes)'); [void]$sb.AppendLine() }
   }
 
   $textPath = Join-Path $workDir 'text.md'
-  [System.IO.File]::WriteAllText($textPath, $sb.ToString(), (New-Object System.Text.UTF8Encoding($false)))
+  # AppendLine emits Environment.NewLine, which is CRLF on Windows, while the
+  # embedded text carries bare LF. The mixed result made `awk '/^## Slide 4$/'`
+  # miss because of a trailing CR. Normalize the whole document to LF so the
+  # section recipes in SKILL.md work verbatim.
+  $outText = $sb.ToString() -replace "`r`n", "`n"
+  [System.IO.File]::WriteAllText($textPath, $outText, (New-Object System.Text.UTF8Encoding($false)))
   Write-Output ('TEXT_MD=' + $textPath)
 
   if ($Render -eq 1) {

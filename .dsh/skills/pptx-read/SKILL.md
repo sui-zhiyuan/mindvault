@@ -55,14 +55,32 @@ work : /mnt/c/Users/.../Temp/pptx-read/<slug>
 
 | | COM 渲染路径（默认） | `--dump` 结构化路径 |
 |---|---|---|
-| 产物 | PNG（真渲染）+ PDF + text.md | markdown/JSON：形状、`pt` 几何、表格、**备注** |
+| 产物 | PNG（真渲染）+ PDF + text.md | markdown/JSON：形状、`pt` 几何、**备注** |
 | 依赖 | 无 | `uv`（首次联网拉 python-pptx） |
 | 看版式/图表/配图 | ✅ 唯一途径 | ❌ |
 | 看**备注** | ❌ | ✅ |
-| 精确几何、表格结构 | ❌ | ✅ |
+| 表格内容 | ✅（逐格，`[TABLE RxC]`） | ✅（逐格） |
+| 精确几何（`pt` 坐标尺寸） | ❌ | ✅ |
 | 老式 `.ppt` | ✅（COM 能开） | ❌（python-pptx 只支持 OOXML） |
 
 **推荐组合**：先 `--no-render --dump` 拿到全文 + 备注（便宜、信息密度最高），确认哪几页有图表要看，再单独跑一次默认命令渲染出图。
+
+## 取某一页
+
+`text.md` 是纯 LF，分页标题是 `## Slide N`，所以严格匹配就能精确切出单页：
+
+```bash
+# 某一页的全部文字
+awk '/^## Slide 4$/{f=1} /^## Slide 5$/{f=0} f' "$TEXT_MD"
+
+# 某一页的表格
+awk '/^## Slide 4$/{f=1} /^## Slide 5$/{f=0} f' "$TEXT_MD" | grep -A20 'TABLE'
+
+# deck 里所有表格
+grep -A20 'TABLE' "$TEXT_MD"
+```
+
+要不要看图由内容决定：**标题 + 表格 + 备注已经能回答大多数问题**，只有当某一页的价值在图（架构图、流程图、图表）里时才去 `read_image` 对应 PNG。
 
 ## 实现要点（改动脚本前必读）
 
@@ -72,6 +90,8 @@ work : /mnt/c/Users/.../Temp/pptx-read/<slug>
 4. **`UV_CACHE_DIR` 必须重定向。** 沙箱下 `~/.cache/uv` 只读；脚本指向 `<repo>/.dsh.local/uv-cache`。
 5. **清理旧产物。** 每次运行前删掉 workDir 里的 `*.PNG`/`*.pdf`，否则上一份 deck 的图会被误认成本次的。
 6. **用完即退。** COM 用完必须 `$app.Quit()`，否则残留 POWERPNT 进程。
+7. **表格必须单独走 `HasTable`，不能只读 `HasTextFrame`。** 表格文字不在页级 TextFrame 里，只判断 `HasTextFrame` 会**静默丢掉整张表**——而这恰恰是最该拿到的内容。见 `render_pptx.ps1` 里的 `[TABLE RxC]` 分支。
+8. **写 `text.md` 前必须把行尾统一成 LF。** `AppendLine` 产出 CRLF，而正文自带 LF，混在一起会让 `awk '/^## Slide 4$/'` 因行尾的 `\r` 匹配失败。这一条和上一条都是"不报错但丢内容/失配"型缺陷，改动脚本后务必回归。
 
 ## 已知坑
 
@@ -83,8 +103,10 @@ work : /mnt/c/Users/.../Temp/pptx-read/<slug>
 ## 自检
 
 1. `SLIDES=` 的数字与 `ls <png>/Slide*.PNG | wc -l` 一致；
-2. `text.md` 用 `file` 确认是 `UTF-8`，抽查中文不是乱码；
-3. 抽 1–2 页 `read_image` 确认能真正看到内容（背景、图表、中文均清晰）。
+2. `text.md` 用 `file` 确认是 `UTF-8`**且不含 CRLF**，抽查中文不是乱码；
+3. 严格分页匹配能取到页（`awk '/^## Slide 1$/'` 有输出）；
+4. 若 deck 含表格，`grep -c 'TABLE' text.md` > 0；
+5. 抽 1–2 页 `read_image` 确认能真正看到内容（背景、图表、中文均清晰）。
 
 ## 交付约定
 
