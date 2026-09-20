@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>百并发 walltime 分阶段归因 · 阶段表（a73d471d 基线复现轮）</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a2230; --muted:#5b6572;
+    --line:#e4e8ee; --line-strong:#d3d9e2;
+    --accent:#1f4fd8; --accent-soft:#eef2fd;
+    --create:#1f4fd8; --pause:#b25a00; --resume:#0f7b5e;
+    --create-bg:#eef2fd; --pause-bg:#fdf3e7; --resume-bg:#e9f6f1;
+    --warn-bg:#fff7e6; --warn-line:#f0d59a;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    font-size:14.5px; line-height:1.62;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 20px 80px;}
+
+  /* ---------- header ---------- */
+  header.hero{
+    background:linear-gradient(135deg,#141a29 0%,#1d2a45 60%,#23355a 100%);
+    color:#eef2fb; border-radius:14px; padding:30px 32px; margin-bottom:22px;
+    box-shadow:0 6px 24px rgba(20,26,41,.18);
+  }
+  header.hero h1{margin:0 0 8px; font-size:23px; letter-spacing:.3px;}
+  header.hero .sub{color:#b9c4d8; font-size:13.5px; margin-bottom:16px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+    padding:3px 11px; border-radius:999px; font-size:12px; color:#dbe3f2;
+    font-family:var(--mono);
+  }
+  .chip b{color:#fff; font-weight:600;}
+
+  /* ---------- section scaffolding ---------- */
+  section.card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:24px 28px; margin-bottom:22px; box-shadow:0 1px 2px rgba(20,26,41,.04);
+  }
+  h2{
+    margin:0 0 4px; font-size:18.5px; display:flex; align-items:center; gap:10px;
+    letter-spacing:.2px;
+  }
+  h2 .no{
+    background:var(--accent); color:#fff; border-radius:7px; font-size:12.5px;
+    padding:3px 9px; font-family:var(--mono); font-weight:600;
+  }
+  .lede{color:var(--muted); font-size:13px; margin:2px 0 18px;}
+  h3{font-size:15.5px; margin:26px 0 10px; padding-left:10px; border-left:3px solid var(--accent);}
+  h3 small{font-weight:500; color:var(--muted); margin-left:8px; font-size:12.5px;}
+
+  /* ---------- callout / legend ---------- */
+  .callout{
+    border-radius:9px; padding:13px 16px; margin:14px 0; font-size:13px;
+    border:1px solid; background:#fbfcfe;
+  }
+  .callout.env{border-color:#c8d6f0; background:var(--accent-soft);}
+  .callout.note{border-color:var(--warn-line); background:var(--warn-bg);}
+  .callout.legend{border-color:var(--line-strong); background:#fafbfd;}
+  .callout b{font-weight:600;}
+  .callout .k{font-family:var(--mono); font-size:12px; background:#fff; border:1px solid var(--line-strong);
+    border-radius:5px; padding:1px 6px; margin:0 2px; color:var(--ink); white-space:nowrap;}
+
+  /* ---------- env grid ---------- */
+  .envgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin:8px 0 4px;}
+  .envcell{border:1px solid var(--line); border-radius:9px; padding:12px 14px; background:#fff;}
+  .envcell .k{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:5px;}
+  .envcell .v{font-size:13.5px; font-weight:600; word-break:break-word;}
+  .envcell .v.mono{font-family:var(--mono); font-weight:500;}
+
+  /* ---------- tables ---------- */
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:9px; margin:14px 0;}
+  table{border-collapse:collapse; width:100%; font-size:12.8px;}
+  thead th{
+    background:#f1f4f8; color:#3a4453; text-align:left; font-weight:600;
+    padding:9px 11px; border-bottom:2px solid var(--line-strong); white-space:nowrap;
+    position:sticky; top:0;
+  }
+  tbody td{padding:8px 11px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fafbfd;}
+  td.num,th.num{text-align:right; font-family:var(--mono); white-space:nowrap;}
+  td.comp{white-space:nowrap; font-family:var(--mono); font-size:12px; color:#2b3443;}
+  td.cal{color:var(--muted); font-size:12px;}
+  .row-head{background:#f8fafc;}
+  .row-key td{background:var(--accent-soft);}
+  .step-no{font-family:var(--mono); font-size:12px; color:var(--muted); white-space:nowrap;}
+  .star{color:#c0392b; font-weight:700;}
+  .sub-step td{background:#fbfcfe;}
+  .sub-step .step-no{padding-left:14px;}
+  .aux td{background:#f7f9fb; color:var(--muted);}
+
+  /* operation tint headers */
+  .op-badge{display:inline-block; font-size:12px; font-weight:600; padding:2px 9px; border-radius:6px;}
+  .op-create{background:var(--create-bg); color:var(--create);}
+  .op-pause{background:var(--pause-bg); color:var(--pause);}
+  .op-resume{background:var(--resume-bg); color:var(--resume);}
+
+  .closure{border:1px solid var(--line); border-radius:9px; padding:11px 14px; margin:12px 0; background:#fbfcfe; font-size:13px;}
+  .closure .l{font-family:var(--mono); font-size:12.5px; color:#2b3443;}
+  .closure b.c1{color:var(--create);} .closure b.c2{color:var(--pause);} .closure b.c3{color:var(--resume);}
+
+  /* ---------- diff section ---------- */
+  .concept{display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--line-strong);
+    border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; margin:14px 0;}
+  .concept .col{background:#fff;}
+  .concept .chead{padding:9px 12px; font-weight:700; font-size:13px; color:#fff; text-align:center; letter-spacing:.3px;}
+  .concept .chead.c1{background:var(--create);} .concept .chead.c2{background:var(--pause);} .concept .chead.c3{background:var(--resume);}
+  .concept ul{list-style:none; margin:0; padding:6px 12px 10px;}
+  .concept li{padding:7px 2px; border-bottom:1px dashed var(--line); font-size:12.6px;}
+  .concept li:last-child{border-bottom:none;}
+  .concept li .ph{color:#9aa4b3; font-family:var(--mono); font-size:11.5px; float:right;}
+  .concept li .star{color:#c0392b;}
+
+  .diff-note{border-left:4px solid var(--accent); background:var(--accent-soft); border-radius:0 8px 8px 0;
+    padding:12px 16px; margin:16px 0; font-size:13.5px;}
+  .diff-note b{color:var(--accent);}
+
+  .d-map td{font-size:12.6px;}
+  .d-map .concept-cell{font-weight:600; white-space:nowrap;}
+  .d-map .gap{background:#fff8f8;}
+  .d-map .gap .tag{color:#c0392b;}
+  .d-map .fix{background:#f4faf6;}
+  .d-map .fix .tag{color:#0f7b5e;}
+  .tag{font-size:11px; font-weight:700; padding:1px 7px; border-radius:5px; display:inline-block; margin-right:4px;}
+
+  .why-list{margin:12px 0 4px; padding-left:2px;}
+  .why-list li{margin:9px 0; font-size:13.3px;}
+  .why-list li b{font-weight:600;}
+
+  /* ---------- p50 bar chart ---------- */
+  figure{margin:0;}
+  .viz-root{
+    color-scheme:light;
+    --surface:#fcfcfb; --viz-ink:#0b0b0b; --viz-ink2:#52514e; --viz-muted:#898781;
+    --viz-grid:#e1e0d9; --viz-baseline:#c3c2b7;
+    border:1px solid var(--line); border-radius:10px; padding:16px 18px 18px;
+    margin:16px 0 4px; background:var(--surface);
+  }
+  .viz-root .panels{display:grid; grid-template-columns:1fr; gap:16px; margin-top:12px;}
+  .viz-root .panel{border:1px solid var(--viz-grid); border-radius:9px; padding:13px 15px 8px; background:#fff;}
+  .viz-root .panel figcaption{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:8px;}
+  .viz-root .cap-title{font-weight:700; font-size:13.5px; color:var(--viz-ink);}
+  .viz-root .cap-total{font-family:var(--mono); font-size:11.5px; color:var(--viz-muted);}
+  .bar-row{display:grid; grid-template-columns:200px 1fr 60px; gap:12px; align-items:center; padding:3px 2px; border-radius:6px; cursor:default;}
+  .bar-row:hover{background:#f5f7fa;}
+  .bar-row.dom{background:linear-gradient(90deg, rgba(11,11,11,.045), rgba(11,11,11,0));}
+  .bar-row .stage-name{display:block; font-size:12.6px; color:var(--viz-ink); line-height:1.32;}
+  .bar-row.dom .stage-name{font-weight:700;}
+  .bar-row .stage-comp{display:block; font-size:10.6px; color:var(--viz-muted); font-family:var(--mono);}
+  .bar-track{position:relative; height:16px; border-left:1px solid var(--viz-baseline);}
+  .bar-fill{position:absolute; left:0; top:50%; transform:translateY(-50%); height:13px; border-radius:0 4px 4px 0; min-width:2px; background:var(--bar);}
+  .bar-row.dom .bar-fill{background:var(--bar-dark);}
+  .bar-value{font-family:var(--mono); font-size:12.2px; text-align:right; color:var(--viz-ink2); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .bar-value .u{color:var(--viz-muted); font-size:10.5px;}
+  .star-mark{color:#c0392b; font-weight:700;}
+  .viz-foot{font-size:12px; color:var(--muted); margin-top:12px; border-top:1px solid var(--viz-grid); padding-top:10px;}
+  .p50-tip{
+    position:fixed; pointer-events:none; background:#141a29; color:#eef2fb; font-size:12px;
+    padding:7px 10px; border-radius:7px; box-shadow:0 4px 16px rgba(0,0,0,.28); z-index:50; max-width:340px; display:none;
+  }
+  .p50-tip .t-stage{font-weight:700; display:block; line-height:1.3;}
+  .p50-tip .t-comp{color:#b9c4d8; font-family:var(--mono); font-size:11px; display:block; margin-top:2px;}
+  .p50-tip .t-val{display:block; margin-top:4px; font-family:var(--mono); font-weight:700;}
+  .p50-tip .t-src{color:#9aa4b3; font-size:10.5px; display:block; margin-top:2px; line-height:1.35;}
+
+  footer{color:var(--muted); font-size:12px; text-align:center; margin-top:26px;}
+
+  @media print{
+    body{background:#fff;}
+    section.card{box-shadow:none; break-inside:avoid;}
+    header.hero{background:#1a2230; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    thead th{background:#eee !important;}
+  }
+  @media (max-width:640px){
+    .concept{grid-template-columns:1fr;}
+    .bar-row{grid-template-columns:150px 1fr 52px; gap:8px;}
+    .wrap{padding:16px 10px 60px;}
+    section.card{padding:16px 14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>百并发 walltime 分阶段归因 · 阶段表</h1>
+  <div class="sub">a73d471d 基线复现轮（pfwA73_0920）· 阶段 p50 分解 ＋ 概念步骤 vs 实测对照</div>
+  <div class="chips">
+    <span class="chip">tag <b>pfwA73_0920</b></span>
+    <span class="chip">n=100 · c=25 · verify=off</span>
+    <span class="chip">日期 <b>2026-09-20</b></span>
+  </div>
+</header>
+
+<!-- ===================== 实验环境 ===================== -->
+<section class="card" id="env">
+  <h2><span class="no">01</span>实验环境</h2>
+  <p class="lede">环境指纹在轮次起止均被门禁与 EXE 采样自证，确保数据无第三方混跑污染。</p>
+
+  <div class="envgrid">
+    <div class="envcell"><div class="k">服务器</div><div class="v">sr90（192.168.25.90 master）</div></div>
+    <div class="envcell"><div class="k">硬件</div><div class="v">384 核 Kunpeng 950 · 2261 GiB</div></div>
+    <div class="envcell"><div class="k">内核</div><div class="v mono">6.6.0-9999.sp3.vnmi.xarray.d383a36d</div></div>
+    <div class="envcell"><div class="k">数据盘</div><div class="v">XFS（reflink / CoW 零拷贝）</div></div>
+    <div class="envcell"><div class="k">shim 版本</div><div class="v mono">a73d471d · sha 329ce5ab</div></div>
+    <div class="envcell"><div class="k">控制面</div><div class="v mono">cubelet 6814fade · cubemaster 2398ba28</div></div>
+    <div class="envcell"><div class="k">模板</div><div class="v mono">tpl-6f86cd660ee343f79cadd275</div></div>
+    <div class="envcell"><div class="k">模板规格</div><div class="v">bench-2g-v2（2C / 2G）</div></div>
+  </div>
+
+  <div class="callout env">
+    <b>环境门禁（轮次前后）</b>：集群存活集仅 <span class="k">FOREIGN 5397440a…(paused)</span>；
+    journalctl 近 10 分钟第三方 creates=0；lzh 11:25 后进程静默。<br>
+    <b>钉版与污染监视</b>：<span class="k">a73_pin.sh pin</span> 三路径原子覆盖为 329ce5ab → PIN_OK；
+    轮中 <span class="k">exe_watch.sh</span> 每 2 s 采样全部运行 shim 的 /proc/PID/exe sha，仅出现 <span class="k">329ce5ab</span> 唯一值，零污染；
+    轮后 <span class="k">restore</span> 逐字节还原 → RESTORE_OK。<br>
+    <b>部署谱系</b>：本轮为 v0.7.1 控制面 + a73d471d shim 的混合体（部署位 a73 原版控制面已于 09-16 被 lzh 升级），
+    已用 ocA73 轮与 Cubelet CostTime 对账验证其在三操作上等价于基线。
+  </div>
+</section>
+
+<!-- ===================== 如何采集 ===================== -->
+<section class="card" id="method">
+  <h2><span class="no">02</span>如何采集的</h2>
+  <p class="lede">计时口径、数据源与工具链；阶段表的每一格都能回溯到原始打点。</p>
+
+  <h3>计时口径</h3>
+  <ul class="why-list">
+    <li><b>整波 wall</b>：bench v2 栅栏 <span class="k">GO</span> → 最后一个结果返回（不含线程启动）。= 末实例 queue ＋ 末实例 RTT。</li>
+    <li><b>RTT</b>：纯 POST 往返（单请求）。<b>queue</b>：GO → 拿到并发位（客户端信号量等待，非服务端延迟）。</li>
+    <li><b>阶段边界</b>：<span class="k">cube-shim-req.log</span> 纳秒时间戳标记（每实例每波取首现），逐标记相减得段长。</li>
+    <li><b>三个口径</b>：<b>p50</b> = 典型单请求中位；<b>p95</b> = POST 尾部（= 批 1 最慢单例）；<b>max/整波</b> = 末实例完成路径。</li>
+  </ul>
+
+  <h3>数据源（表内「口径」列标签）</h3>
+  <div class="callout legend">
+    <span class="k">[req]</span> cube-shim-req.log 纳秒时间戳标记间隔（100 实例聚合） ·
+    <span class="k">[stat]</span> Cubelet/shim stat 日志 CostTime ·
+    <span class="k">[perf]</span> perf walltime（cpu-clock + sched_switch 混合双事件） ·
+    <span class="k">[path]</span> stage_path.py 逐实例时间线 ·
+    <span class="k">[join]</span> 三源逐实例差分（stage_upstream.py：bench RTT × req shim span × Cubelet workflow）
+  </div>
+
+  <h3>波窗口与对账</h3>
+  <ul class="why-list">
+    <li>每波前记录三日志偏移（shim-stat 行数 / Cubelet-stat 行数 / shim-req 字节偏移），波 N 的记录 = [本波偏移, 下一波偏移)，InstanceIds 过滤到本波 ids。</li>
+    <li>每波 <span class="k">perf record -a -m 1024 -g --call-graph fp -e cpu-clock/freq={499|99|299}/ -e sched:sched_switch</span>，
+      <span class="k">perf_wall.py</span> 按 bench 单调钟窗口裁剪，tid 配对 switch-out→in 得阻塞（S/D/R 态）。</li>
+    <li><b>样本对账</b>（pause 波）：cpu-clock 36,757 + sched 220,604；覆盖率 98.4%，零丢样级质量；stage_path join = 100/100（三波全对上）。</li>
+  </ul>
+
+  <h3>工具链（源码 <span class="k">sandbox\perf-walltime\</span>，部署 <span class="k">.bench/</span>）</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>工具</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td class="comp">a73_pin.sh pin|restore|status</td><td class="cal">a73 shim 三路径钉版/恢复（备份现场 + sha 复核）</td></tr>
+      <tr><td class="comp">exe_watch.sh &lt;TAG&gt;</td><td class="cal">轮中运行 shim EXE 采样（污染检测）</td></tr>
+      <tr><td class="comp">perf_round_wt.sh &lt;tag&gt; &lt;n&gt; &lt;c&gt;</td><td class="cal">walltime 轮编排（波配置/排空/放行语义）</td></tr>
+      <tr><td class="comp">perf_wall.py &lt;perf.data&gt; [window]</td><td class="cal">on-CPU / off-CPU / walltime 分析</td></tr>
+      <tr><td class="comp">stage_mine.py &lt;tag&gt;</td><td class="cal">stat 日志波窗挖掘 + req 词表</td></tr>
+      <tr><td class="comp">stage_gap.py &lt;tag&gt;</td><td class="cal">req.log 标记间隔统计 + 原始值 dump</td></tr>
+      <tr><td class="comp">stage_path.py &lt;tag&gt;</td><td class="cal"><b>整波完成路径分解</b>：批次结构、末实例/最慢单例逐标记时间线、尾部归因</td></tr>
+      <tr><td class="comp">stage_upstream.py &lt;tag&gt;</td><td class="cal"><b>上游段逐实例分解</b>：API+CubeMaster / Cubelet 自身 / 上游合计</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================== 阶段表 ===================== -->
+<section class="card" id="stages">
+  <h2><span class="no">03</span>阶段表（三个口径）</h2>
+  <p class="lede">每操作一个子表。列：<b>p50</b> = 中位闭环 · <b>p95</b> = POST 尾部 · <b>max</b> = 整波/最慢实例。带 <span class="star">*</span> 者为操作最大成本段。</p>
+
+  <!-- 柱状图 -->
+  <div class="viz-root" id="p50chart">
+    <h3 style="margin:0;">阶段 p50 一览（柱状图）</h3>
+    <p class="lede" style="margin:4px 0 0;">每操作一屏，横向柱状图；条长 = p50（ms）。<span class="star-mark">★ 深色条</span> = 该操作最大成本段。</p>
+    <div class="panels" aria-label="三操作阶段 p50 柱状图"></div>
+    <div class="viz-foot">注：仅含直接实测的分段（[req]/[stat]/[perf]）。残差项（Shim 集成 ~17）、非路径项（P2P 分发 = 0、磁盘快照 ≈0、virtio/冻结 vCPU 亚毫秒）与部分样本辅助项（cgroup/storage，n&lt;30）未入图；总 p50 与顶层三分拆见各屏副标题。</div>
+    <div class="p50-tip" role="tooltip"></div>
+  </div>
+
+  <!-- ============ 4.1 create ============ -->
+  <h3>4.1 Start · create <span class="op-badge op-create">create</span></h3>
+  <div class="closure">
+    <span class="l">中位闭环 p50 = 74.8 = API+CubeMaster <b class="c1">6.4</b> ＋ Cubelet 自身 <b class="c1">26.4</b> ＋ Shim <b class="c1">41.1</b></span><br>
+    <span class="l">整波完成路径 = 433.7 = 末实例 queue 372.0 ＋ 末实例 RTT 61.6（shim 31.4 ＋ 上游 30.2）</span><br>
+    <span class="l">尾部 p95 = 214.0（批 1）＝ 最慢单例 217.0 = 上游 166.1 ＋ shim 50.9</span>
+  </div>
+
+  <div class="table-scroll"><table class="stages">
+    <thead><tr><th>#</th><th>阶段</th><th>组件</th><th class="num">p50</th><th class="num">p95</th><th class="num">max</th><th>口径</th></tr></thead>
+    <tbody>
+      <tr class="row-head"><td class="step-no">1-2</td><td>API 接入＋编排洗点（分发）</td><td class="comp">CubeAPI＋CubeMaster</td><td class="num"><b>6.4</b></td><td class="num">13.5</td><td class="num"><b>15.1</b></td><td class="cal">[join] 逐实例 RTT−workflow；两层无独立打点不可拆（on-CPU 参考 api 0.6 / master 4.4 ms/op [perf]）；批 1 均值 12.9 vs 批 2-4 ~6.1</td></tr>
+      <tr class="row-head"><td class="step-no">3</td><td>模板镜像·P2P 分发</td><td class="comp">P2P</td><td class="num"><b>0（不在路径）</b></td><td class="num">—</td><td class="num">—</td><td class="cal">模板快照已本地化；分发在模板构建期</td></tr>
+      <tr class="sub-step"><td class="step-no">3a</td><td>↳ 快照恢复 init</td><td class="comp">CubeShim</td><td class="num">0.1</td><td class="num">0.2</td><td class="num">0.2</td><td class="cal">[req]</td></tr>
+      <tr class="sub-step"><td class="step-no">3b</td><td>↳ 快照目录解析（reflink 建卷）</td><td class="comp">CubeCoW</td><td class="num">1.7</td><td class="num">2.3</td><td class="num">3.1</td><td class="cal">[req]；XFS reflink 无拷贝</td></tr>
+      <tr><td class="step-no">4</td><td>MicroVM 创建</td><td class="comp">CubeHypervisor</td><td class="num"><b>1</b></td><td class="num">2</td><td class="num">2</td><td class="cal">[stat] Create/Ch/LaunchVmm</td></tr>
+      <tr><td class="step-no">5</td><td>Shim 集成（框架开销）</td><td class="comp">CubeShim</td><td class="num"><b>~17</b></td><td class="num">—</td><td class="num">—</td><td class="cal">中位之差 41.1−23.3；= spec 0.2＋reflink 1.7＋pmem 4.4＋收尾 1.2＋容器 9.2；max-RTT 实例该值 20.6</td></tr>
+      <tr><td class="step-no">6</td><td>KVM 创建 VM/vCPU</td><td class="comp">内核</td><td class="num">~7.5（均摊）</td><td class="num">≤99.4</td><td class="num">≤103.4</td><td class="cal">[perf] 均摊 on-CPU 4.3＋3.2 ms/op；上界＝所在 guest 窗（行 7），max-RTT 实例该窗仅 30.3</td></tr>
+      <tr class="row-key"><td class="step-no">7</td><td><b>Guest 启动→agent 就绪</b></td><td class="comp">cube-agent</td><td class="num"><b>23.3</b></td><td class="num"><b>99.4</b></td><td class="num">103.4</td><td class="cal">[req]（p95/max = 批 1 冷例；最慢单例该段 30.3）</td></tr>
+      <tr class="sub-step"><td class="step-no">8</td><td>↳ pmem 设备发现</td><td class="comp">CubeShim</td><td class="num">4.4</td><td class="num">9.9</td><td class="num">12.9</td><td class="cal">[req]</td></tr>
+      <tr class="sub-step"><td class="step-no">9</td><td>↳ sandbox 收尾</td><td class="comp">CubeShim</td><td class="num">1.2</td><td class="num">6.7</td><td class="num">11.7</td><td class="cal">[req]（自报 at:117 与时间戳差互证）</td></tr>
+      <tr class="row-key"><td class="step-no">10</td><td><b>容器启动</b></td><td class="comp">CubeShim×Agent</td><td class="num"><b>9.2</b></td><td class="num">14.9</td><td class="num">23.6</td><td class="cal">[req]；[stat] CreateContainer 9.0 ✓</td></tr>
+      <tr><td class="step-no">—</td><td>→ create req 返回</td><td class="comp">CubeShim</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0</td><td class="cal">[req]</td></tr>
+      <tr class="aux"><td class="step-no">辅</td><td>cgroup / storage / probe / metadata</td><td class="comp">Cubelet</td><td class="num">8.5 / 7.9 / 6.2 / 6.7</td><td class="num"><b>105.3 / 100.4</b> / 8.9 / 9.6</td><td class="num">105.4 / 102.2 / 13.8 / 9.6</td><td class="cal">[stat] n=26/20/31/6 —— cgroup/storage 的 ~100 ms 慢簇即批 1 Cubelet 自身段的主体</td></tr>
+      <tr class="aux"><td class="step-no">后续</td><td>probe exec＋wait＋update（POST 返回后）</td><td class="comp">Shim×Agent</td><td class="num">~7</td><td class="num">—</td><td class="num">—</td><td class="cal">[req]（末实例 +35.6→+36.3；不占 RTT）</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede" style="margin-top:8px;"><b>尾部归因</b>（slow10 vs fast10 均值差）：shim 内 Δ16.4（guest 11.2＋容器 1.9＋pmem 1.4＋收尾 1.6）——<b>create 尾部大头在 Cubelet 上游</b>（批 1 上游均值 122.0 vs 后续批 29.2-33.5）。</p>
+
+  <!-- ============ 4.2 pause ============ -->
+  <h3>4.2 Pause · pause <span class="op-badge op-pause">pause</span></h3>
+  <div class="closure">
+    <span class="l">中位闭环 p50 = 216.3 = API+CubeMaster <b class="c2">5.6</b> ＋ Cubelet 自身 <b class="c2">26.9</b> ＋ Shim <b class="c2">180.8</b>（固定窗 51.4 ＋ 快照窗 129.8）</span><br>
+    <span class="l">整波完成路径 = 972.4 = 末实例 queue 726.0 ＋ 末实例 RTT 246.3（固定窗 50.6 ＋ 快照 143.3 ＋ 上游 52.5）</span><br>
+    <span class="l">尾部 p95 = 322.9（批 1）＝ 最慢单例 342.2 = 上游 103.1 ＋ 固定窗 51.3 ＋ 快照 187.7</span>
+  </div>
+
+  <div class="table-scroll"><table class="stages">
+    <thead><tr><th>#</th><th>阶段</th><th>组件</th><th class="num">p50</th><th class="num">p95</th><th class="num">max</th><th>口径</th></tr></thead>
+    <tbody>
+      <tr><td class="step-no">1</td><td>编排触发（Cubelet 自身）</td><td class="comp">AutoPause</td><td class="num"><b>26.9</b></td><td class="num">54.6</td><td class="num"><b>73.8</b></td><td class="cal">[join] 逐实例 workflow−span；批 1 均值 42.0 vs 批 2-4 23-28</td></tr>
+      <tr><td class="step-no">2</td><td>冻结 vCPU</td><td class="comp">KVM</td><td class="num">&lt;1（ioctl 本体）</td><td class="num">—</td><td class="num">—</td><td class="cal">无独立打点；cputime 归因推断亚毫秒</td></tr>
+      <tr class="row-key"><td class="step-no">2a</td><td><b>↳ 冻结+断连固定窗</b></td><td class="comp">CubeShim</td><td class="num"><b>51.4</b></td><td class="num">51.5</td><td class="num">51.5</td><td class="cal">[req]——<b>对快慢实例恒定</b>（slow10/fast10 均值 51.2/51.1，Δ=0.0）= 已知 50 ms sleep</td></tr>
+      <tr class="row-key"><td class="step-no">3</td><td><b><span class="star">*</span>内存快照（全窗）</b></td><td class="comp">CubeHypervisor</td><td class="num"><b>129.8</b></td><td class="num"><b>187.7</b></td><td class="num">194.9</td><td class="cal">[req]；<b>尾部全部来自此段</b>（slow10/fast10 差 89.0 全在窗内）</td></tr>
+      <tr class="sub-step"><td class="step-no">3a</td><td>↳ dump 拷贝（CPU 侧）</td><td class="comp">CubeHypervisor</td><td class="num">~25（均摊）</td><td class="num">—</td><td class="num">—</td><td class="cal">[perf] vmm on-CPU 2.53 s/100；3a＋3b 合计的逐实例分布 ≈ 行 3 快照窗</td></tr>
+      <tr class="sub-step"><td class="step-no">3b</td><td>↳ 快照落盘（冲刷）</td><td class="comp">存储</td><td class="num"><b>~107</b>（均摊）</td><td class="num">—</td><td class="num">—</td><td class="cal">[perf] vmm close() <b>D 态</b> 10.70 s/100（<span class="k">__close+0x58</span> 栈 10.00 s）；与 3a 合计 ≈ 行 3 窗（max-RTT 实例合计 187.7）</td></tr>
+      <tr><td class="step-no">4</td><td>设备状态保存</td><td class="comp">virtio</td><td class="num">亚毫秒–毫秒</td><td class="num">—</td><td class="num">—</td><td class="cal">含于 #3 窗；无独立打点</td></tr>
+      <tr><td class="step-no">5</td><td>磁盘快照</td><td class="comp">CubeCoW(CGO)</td><td class="num"><b>~0</b></td><td class="num">—</td><td class="num">—</td><td class="cal">XFS reflink；ocA73 实证快照包 disks/ files=0 bytes=0</td></tr>
+      <tr><td class="step-no">6</td><td>→ update req 返回</td><td class="comp">CubeShim</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0</td><td class="cal">[req]</td></tr>
+      <tr><td class="step-no">7</td><td>就绪返回（上行）</td><td class="comp">CubeAPI＋CubeMaster</td><td class="num">5.6</td><td class="num">30.3</td><td class="num"><b>31.2</b></td><td class="cal">[join] 逐实例 RTT−workflow；批 1 均值 29.0 vs 批 2-4 ~5.4（pause 波 API+master 层批 1 冷效应 ~24 ms，三操作中最明显）</td></tr>
+      <tr class="aux"><td class="step-no">后续</td><td>Cubelet 发 delete reap shim</td><td class="comp">Cubelet→Shim</td><td class="num">4.7</td><td class="num">16.7</td><td class="num">16.9</td><td class="cal">[req]（末实例 Δ9.0；POST 后异步）</td></tr>
+      <tr class="aux"><td class="step-no">后续</td><td>shim 退出序列</td><td class="comp">CubeShim</td><td class="num">~2</td><td class="num">—</td><td class="num">—</td><td class="cal">[req] delete→shutdown→exit</td></tr>
+      <tr class="aux"><td class="step-no">异步</td><td>XFS 回写 kworker</td><td class="comp">内核</td><td class="num">kthread D 22.95 s/窗（多 worker 并行）</td><td class="num">—</td><td class="num">—</td><td class="cal">[perf] 与 #3b 同批 IO 另一侧，不重复计入 POST；kthread on-CPU 0.20 s/窗</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede" style="margin-top:8px;"><b><span class="star">*</span>内存快照窗交叉验证</b>：dump 拷贝 25.3（on-CPU）＋ close 冲刷 107（D 态）= 132.3 ≈ 129.8（[req] 窗）✓。
+  即 a73 增量 dump（a00a714c）的实测全成本——对比无增量 dump 的官方/WIP 版 ~1 s/op 低一个数量级。</p>
+
+  <!-- ============ 4.3 resume ============ -->
+  <h3>4.3 Resume · resume <span class="op-badge op-resume">resume</span></h3>
+  <div class="closure">
+    <span class="l">中位闭环 p50 = 245.1 = API+CubeMaster <b class="c3">7.4</b> ＋ Cubelet 自身 <b class="c3">37.6</b> ＋ Shim <b class="c3">197.9</b>（[stat] CreatePodSandbox 197.0 互证）</span><br>
+    <span class="l">整波完成路径 = 1007.1 = 末实例 queue 894.0 ＋ 末实例 RTT 113.0（VM 恢复 72.1 ＋ 内存 9.0 ＋ 容器 7.0 ＋ 上游 22.0）</span><br>
+    <span class="l">尾部 p95 = 338.2（批 1）＝ 最慢单例 352.4 = 上游 112.4 ＋ VM 恢复 159.6 ＋ 内存恢复 51.7 ＋ 收尾 27.1</span>
+  </div>
+
+  <div class="table-scroll"><table class="stages">
+    <thead><tr><th>#</th><th>阶段</th><th>组件</th><th class="num">p50</th><th class="num">p95</th><th class="num">max</th><th>口径</th></tr></thead>
+    <tbody>
+      <tr><td class="step-no">1</td><td>编排触发（Cubelet 自身）</td><td class="comp">AutoResume</td><td class="num"><b>37.6</b></td><td class="num">97.7</td><td class="num"><b>102.1</b></td><td class="cal">[join] 逐实例 workflow−span；批 1 均值 81.2 vs 批 2-4 31-36；resume 走 create workflow（共用流控 100）</td></tr>
+      <tr><td class="step-no">2</td><td>reflink 恢复（快照目录解析）</td><td class="comp">CubeCoW(CGO)</td><td class="num"><b>1.6</b></td><td class="num">2.2</td><td class="num">2.6</td><td class="cal">[req]（pause-snapshots/snap-xxx）</td></tr>
+      <tr class="sub-step"><td class="step-no">2a</td><td>↳ storage 动作（约三成实例）</td><td class="comp">Cubelet</td><td class="num">27.1（n=29）</td><td class="num">30.0</td><td class="num">30.1</td><td class="cal">[stat]</td></tr>
+      <tr><td class="step-no">3</td><td>MicroVM 再拉起</td><td class="comp">CubeHypervisor</td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="cal">[stat] LaunchVmm（新 shim 进程）</td></tr>
+      <tr class="row-key"><td class="step-no">4</td><td><b><span class="star">*</span>VM 恢复启动→agent 就绪</b></td><td class="comp">CubeHypervisor×内核×guest</td><td class="num"><b>145.3</b></td><td class="num"><b>168.5</b></td><td class="num">176.4</td><td class="cal">[req]；含 RestoreVm 32 [stat]＋KVM 状态恢复＋guest 恢复执行＋agent 握手；全分布 43.0→176.4；最慢单例 159.6</td></tr>
+      <tr class="row-key"><td class="step-no">5</td><td><b><span class="star">*</span>内存恢复</b></td><td class="comp">CubeHypervisor</td><td class="num"><b>37.1</b></td><td class="num">62.4</td><td class="num">91.3</td><td class="cal">[req]（<b>agent 就绪之后</b>才补内存卷）；窗内 vmm D 态 17.5 ms/op [perf] = dump 读回</td></tr>
+      <tr><td class="step-no">6</td><td>设备状态恢复</td><td class="comp">virtio</td><td class="num">含于 #4/#5 窗</td><td class="num">—</td><td class="num">—</td><td class="cal">无独立打点</td></tr>
+      <tr><td class="step-no">7</td><td>vCPU 恢复</td><td class="comp">KVM</td><td class="num">亚毫秒</td><td class="num">—</td><td class="num">—</td><td class="cal">vCPU 解冻即跑；shim:vcpu on-CPU 1.9 ms/op [perf]</td></tr>
+      <tr><td class="step-no">8</td><td>网络策略重下发</td><td class="comp">CubeVS</td><td class="num"><b>未观测到成批重下发</b></td><td class="num">—</td><td class="num">—</td><td class="cal">[stat] resume 窗 network 仅 n=1（10.5 ms）；策略态跨 pause 持久或走无打点通道</td></tr>
+      <tr class="sub-step"><td class="step-no">9</td><td>↳ sandbox 收尾</td><td class="comp">CubeShim</td><td class="num">1.7</td><td class="num">16.1</td><td class="num">25.0</td><td class="cal">[req]</td></tr>
+      <tr class="row-key"><td class="step-no">10</td><td><b>容器恢复</b></td><td class="comp">CubeShim×Agent</td><td class="num"><b>10.1</b></td><td class="num">22.4</td><td class="num">25.6</td><td class="cal">[req]（create container by restore）</td></tr>
+      <tr><td class="step-no">—</td><td>→ create req 返回</td><td class="comp">CubeShim</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0</td><td class="cal">[req]</td></tr>
+      <tr><td class="step-no">11</td><td>就绪返回（上行）</td><td class="comp">CubeAPI＋CubeMaster</td><td class="num">7.4</td><td class="num">12.3</td><td class="num"><b>13.1</b></td><td class="cal">[join] 逐实例 RTT−workflow；批 1 均值 11.2 vs 批 2-4 6.4-7.7</td></tr>
+      <tr class="aux"><td class="step-no">辅</td><td>cgroup / metadata / probe</td><td class="comp">Cubelet</td><td class="num">10.4(n=21) / 16.3(n=8) / 17.6(n=85)</td><td class="num">11.3 / 16.6 / 25.4</td><td class="num">11.3 / 16.6 / 35.9</td><td class="cal">[stat]</td></tr>
+      <tr class="aux"><td class="step-no">后续</td><td>客户端状态确认（基线口径）</td><td class="comp">GET 轮询</td><td class="num">p50 608/638 ms（基线实测）</td><td class="num">—</td><td class="num">—</td><td class="cal">本轮 verify=off 未测；构成基线整波 1.57–1.84 s 的 POST 外部分</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede" style="margin-top:8px;"><b>尾部归因</b>：Δ128.1 = VM 恢复启动 90.0 ＋ 内存恢复 23.6 ＋ 容器 8.5 ＋ 收尾 5.7。</p>
+</section>
+
+<!-- ===================== 概念 vs 实测 ===================== -->
+<section class="card" id="diff">
+  <h2><span class="no">04</span>概念性步骤分解 vs 实测阶段表：差异在哪里、为何会有</h2>
+  <p class="lede">下面这张 <b>Start·10步 / Pause·6步 / Resume·7步</b> 是「组件功能分解」——谁参与、按什么顺序；
+  而 §03 的三张阶段表是「实测 walltime 分解」——哪里真正花时间、花多少。两者是不同性质的骨架，差异集中在少数几处，逐一对照如下。</p>
+
+  <div class="concept">
+    <div class="col">
+      <div class="chead c1">Start · 10步</div>
+      <ul>
+        <li>API 接入 · CubeAPI <span class="ph">xx ms</span></li>
+        <li>编排洗点 · CubeMaster <span class="ph">xx ms</span></li>
+        <li>模板镜像 · P2P 分发 <span class="ph">xx ms</span></li>
+        <li>MicroVM 创建 · CubeHypervisor <span class="ph">xx ms</span></li>
+        <li>Shim 集成 · CubeShim <span class="ph">xx ms</span></li>
+        <li>KVM 创建 VM/vCPU · 内核 <span class="ph">xx ms</span></li>
+        <li>Guest 启动 · cube-agent <span class="ph">xx ms</span></li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="chead c2">Pause · 6步</div>
+      <ul>
+        <li>编排触发 · AutoPause <span class="ph">xx ms</span></li>
+        <li>冻结 vCPU · KVM <span class="ph">xx ms</span></li>
+        <li><span class="star">*</span>内存快照 · CubeHypervisor <span class="ph">xx ms</span></li>
+        <li>设备状态保存 · virtio <span class="ph">xx ms</span></li>
+        <li>磁盘快照 · CubeCoW(CGO) <span class="ph">xx ms</span></li>
+        <li>快照落盘 · 存储 <span class="ph">xx ms</span></li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="chead c3">Resume · 7步</div>
+      <ul>
+        <li>编排触发 · AutoResume <span class="ph">xx ms</span></li>
+        <li><span class="star">*</span>内存恢复 · CubeHypervisor <span class="ph">xx ms</span></li>
+        <li>reflink 恢复 · CubeCoW(CGO) <span class="ph">xx ms</span></li>
+        <li>设备状态恢复 · virtio <span class="ph">xx ms</span></li>
+        <li>vCPU 恢复 · KVM <span class="ph">xx ms</span></li>
+        <li>网络策略重下发 · CubeVS <span class="ph">xx ms</span></li>
+        <li>就绪返回 · CubeAPI <span class="ph">xx ms</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diff-note">
+    <b>一句话差异</b>：概念图是「功能上存在哪些步骤」，阶段表是「时间上哪些步骤有成本」。功能存在的步骤不一定花时间
+    （reflink 磁盘快照 ≈ 0、virtio 设备状态、vCPU 冻结 ioctl 均亚毫秒、P2P 分发不在路径）；而概念图漏掉了几处
+    <b>真正花时间、却没有对应「功能步骤」</b>的成本——<b>51.4 ms 固定窗 sleep</b>、<b>Cubelet 自身冷动作</b>、
+    <b>VM 恢复启动</b>（resume 的最大段）。这些只能用打点测出来，无法从架构图上推出来。
+  </div>
+
+  <h3>4.4a Start · create：概念步骤 → 实测对应</h3>
+  <div class="table-scroll"><table class="d-map">
+    <thead><tr><th>概念步骤</th><th>实测对应（§4.1）</th><th>差异与原因</th></tr></thead>
+    <tbody>
+      <tr><td class="concept-cell">API 接入 · CubeAPI</td><td>行 1-2，p50 <b>6.4</b> ms</td><td class="cal">基本吻合；但实测中 API 与 CubeMaster 两层无独立打点、合并观测。</td></tr>
+      <tr><td class="concept-cell">编排洗点 · CubeMaster</td><td>行 1-2 ＋ 辅（Cubelet 自身 26.4）</td><td class="cal"><b>归属错位</b>：概念图把编排算给 CubeMaster，实测编排大头在 <b>Cubelet 自身</b>（26.4 ms，尾部 cgroup/storage 冷动作 ~109–152 ms）；CubeMaster on-CPU 仅 4.4 ms/op。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">不在路径</span>模板镜像 · P2P 分发</td><td>行 3 = <b>0（不在路径）</b></td><td class="cal">模板快照已本地化，分发发生在<b>模板构建期</b>；create 只做本地 reflink（行 3b 1.7 ms）。P2P 不在 create 关键路径上。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">概念图缺失</span>（无此步骤）</td><td>行 3a 快照恢复 init 0.1 · 行 8 pmem 4.4 · 行 9 收尾 1.2 · 行 10 容器启动 9.2</td><td class="cal">概念图粒度粗，漏掉 shim 内部多个真实打点段——尤其<b>容器启动 9.2 ms</b> 是 shim 内第二大头。</td></tr>
+      <tr><td class="concept-cell">MicroVM 创建 · CubeHypervisor</td><td>行 4 = <b>1</b> ms</td><td class="cal">吻合（[stat] LaunchVmm）。</td></tr>
+      <tr><td class="concept-cell">Shim 集成 · CubeShim</td><td>行 5 ≈ 17 ms</td><td class="cal">吻合量级，但它是「框架开销」残差（中位之差），非单一打点。</td></tr>
+      <tr><td class="concept-cell">KVM 创建 VM/vCPU · 内核</td><td>行 6 ≈ 7.5 ms（均摊）</td><td class="cal">吻合量级；因 perf 样本无实例标签，无法逐实例分辨，上界取 guest 窗。</td></tr>
+      <tr><td class="concept-cell">Guest 启动 · cube-agent</td><td>行 7 p50 <b>23.3</b> / p95 99.4</td><td class="cal">吻合，且是 shim 内最大单段；但<b>尾部</b>大头在 Cubelet 上游（166.1 ms），不在 guest。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4.4b Pause · pause：概念步骤 → 实测对应</h3>
+  <div class="table-scroll"><table class="d-map">
+    <thead><tr><th>概念步骤</th><th>实测对应（§4.2）</th><th>差异与原因</th></tr></thead>
+    <tbody>
+      <tr><td class="concept-cell">编排触发 · AutoPause</td><td>行 1，p50 <b>26.9</b> ms</td><td class="cal">吻合。</td></tr>
+      <tr><td class="concept-cell">冻结 vCPU · KVM</td><td>行 2 &lt;1 ms（ioctl 本体）</td><td class="cal">吻合（亚毫秒）；但概念图<b>漏了紧随其后的固定窗</b>——见下一行。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">概念图缺失</span>（无此步骤）</td><td>行 2a <b>冻结+断连固定窗 51.4</b> ms</td><td class="cal"><b>最大遗漏之一</b>：50 ms sleep 等日志转发硬中止，对快慢实例恒定（Δ=0.0）。概念图无法推出这种「固定等待」。</td></tr>
+      <tr><td class="concept-cell"><span class="star">*</span>内存快照 · CubeHypervisor</td><td>行 3 p50 <b>129.8</b> / p95 187.7</td><td class="cal">吻合，是 pause 最大段。</td></tr>
+      <tr><td class="concept-cell">设备状态保存 · virtio</td><td>行 4 亚毫秒，含于 #3 窗</td><td class="cal">概念图单独列一步，实测<b>几乎无成本</b>且无独立打点，被并进内存快照窗。</td></tr>
+      <tr><td class="concept-cell">磁盘快照 · CubeCoW(CGO)</td><td>行 5 ≈ <b>0</b></td><td class="cal">概念图单独列一步，实测 XFS reflink（disks/ files=0 bytes=0）<b>近乎免费</b>。</td></tr>
+      <tr class="fix"><td class="concept-cell"><span class="tag">归并差异</span>快照落盘 · 存储</td><td>行 3b ≈ 107 ms（均摊 D 态）</td><td class="cal">概念图把「落盘」当独立后续步；实测落盘是内存快照窗内的 <b>close() 冲刷</b>，与 dump 拷贝同窗不可分步（25＋107=132 ≈ 130）。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">概念图缺失</span>就绪返回</td><td>行 7 p50 5.6 ms</td><td class="cal">概念图 pause 没有「上行/就绪返回」步骤；实测 API+master 上行有 5.6 ms（批 1 冷效应 29 ms）。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4.4c Resume · resume：概念步骤 → 实测对应（差异最集中）</h3>
+  <div class="table-scroll"><table class="d-map">
+    <thead><tr><th>概念步骤</th><th>实测对应（§4.3）</th><th>差异与原因</th></tr></thead>
+    <tbody>
+      <tr><td class="concept-cell">编排触发 · AutoResume</td><td>行 1，p50 <b>37.6</b> ms</td><td class="cal">吻合；resume 走 create workflow（共用流控 100）。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">顺序+量级双错</span><span class="star">*</span>内存恢复 · CubeHypervisor</td><td>行 5 = <b>37.1</b> ms，且在 agent 就绪<b>之后</b></td><td class="cal">概念图把「内存恢复」当第 2 步主成本；实测它只有 37.1 ms，且<b>排在 VM 恢复启动（145.3 ms）之后</b>——不是最大段。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">概念图缺失</span>（无此步骤）</td><td>行 4 <b><span class="star">*</span>VM 恢复启动→agent 就绪 145.3</b> ms</td><td class="cal"><b>最大遗漏</b>：resume 真正的大头（RestoreVm 32 ＋ KVM 状态恢复 ＋ guest 恢复执行），概念图把它想当然归给了「内存恢复」。</td></tr>
+      <tr><td class="concept-cell">reflink 恢复 · CubeCoW(CGO)</td><td>行 2 = <b>1.6</b> ms</td><td class="cal">吻合（XFS reflink 零拷贝）。</td></tr>
+      <tr><td class="concept-cell">设备状态恢复 · virtio</td><td>行 6 含于 #4/#5 窗</td><td class="cal">无独立打点，量级被并进 VM 恢复 / 内存恢复。</td></tr>
+      <tr><td class="concept-cell">vCPU 恢复 · KVM</td><td>行 7 亚毫秒</td><td class="cal">吻合（解冻即跑）。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">实测不存在</span>网络策略重下发 · CubeVS</td><td>行 8 <b>未观测到成批重下发</b>（n=1）</td><td class="cal">概念图列了但实测路径<b>没有</b>：策略态跨 pause 持久，或走无 stat 打点通道（待查）。</td></tr>
+      <tr class="gap"><td class="concept-cell"><span class="tag">概念图缺失</span>（无此步骤）</td><td>行 9 收尾 1.7 · 行 10 容器恢复 10.1</td><td class="cal">概念图漏了<b>容器恢复 10.1 ms</b> 这一真实成本段。</td></tr>
+      <tr><td class="concept-cell">就绪返回 · CubeAPI</td><td>行 11 p50 7.4 ms</td><td class="cal">吻合。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4.4d 为什么会差这么多：四条成因</h3>
+  <ol class="why-list">
+    <li><b>两张图的「纵轴」不同</b>：概念图纵轴是<b>组件功能</b>（谁参与），阶段表纵轴是<b>walltime 成本</b>（谁花时间）。功能存在 ≠ 时间有成本，所以 reflink 磁盘快照、virtio 设备状态、vCPU 冻结 ioctl 在概念图里是「一步」，在阶段表里坍缩成 ~0 或亚毫秒。</li>
+    <li><b>a73 的存储策略把「拷贝」这类概念步骤降到了零</b>：增量内存 dump（a00a714c）＋ XFS reflink（disks/ bytes=0），使「磁盘快照」「模板分发」「reflink 恢复」都变成本地元数据操作，概念图上看起来是成本点的地方实测几乎免费。</li>
+    <li><b>真正的成本藏在「看不见的等待」里，不在「动作」里</b>：51.4 ms 固定窗（等日志转发中止的 sleep）、resume 的 VM 恢复启动（guest 恢复执行＋KVM 状态恢复，145 ms）、批 1 的 Cubelet cgroup/storage 冷动作（~100 ms）——这些没有对应的「功能步骤」，只能靠 req.log 打点 + perf D 态栈才能定位。</li>
+    <li><b>划分边界不同</b>：概念图按组件边界分步（virtio 一步、KVM 一步、存储一步）；实测必须按<b>可打点的边界</b>分——打不到的段（virtio、vCPU ioctl）只能并入相邻窗（#3/#4/#5），因此阶段表里有「含于某窗」「无独立打点」的合并项，而概念图里它们各自成行。</li>
+  </ol>
+
+  <div class="diff-note">
+    <b>结论</b>：概念图适合描述「生命周期/组件职责」，不适合当性能账本。若用概念图指导优化，会去优化 reflink、virtio、vCPU 这些几乎免费的段；
+    而真正该优化的 <b>固定窗 sleep（−38 ms/op 已实证）</b> 和 <b>resume 的 VM 恢复启动（145 ms）</b> 恰恰不在概念图里。
+  </div>
+</section>
+
+<footer>生成自《百并发 walltime 分阶段归因报告（a73d471d 基线复现轮·证据全档）》§4 · 2026-09-20 · 数据源：cube-shim-req.log / Cubelet&shim stat / perf walltime / stage_path & stage_upstream</footer>
+
+</div>
+
+<script>
+(function(){
+  // 阶段 p50（ms），仅含直接实测的分段。dom=1 为该操作最大成本段（深色条）。
+  var P50 = {
+    create: {
+      color:'#2a78d6', dark:'#184f95', max:23.3, badge:'create',
+      title:'Start · create', total:'总 p50 = 74.8 ms = API+Master 6.4 ＋ Cubelet 自身 26.4 ＋ Shim 41.1',
+      rows:[
+        {s:'Guest 启动→agent 就绪', c:'cube-agent', v:23.3, src:'[req]', dom:1},
+        {s:'容器启动', c:'CubeShim×Agent', v:9.2, src:'[req] / [stat] CreateContainer 9.0'},
+        {s:'KVM 创建 VM/vCPU', c:'内核', v:7.5, src:'[perf] 均摊 on-CPU'},
+        {s:'API 接入＋编排洗点', c:'CubeAPI＋Master', v:6.4, src:'[join] RTT−workflow'},
+        {s:'pmem 设备发现', c:'CubeShim', v:4.4, src:'[req]'},
+        {s:'快照目录解析(reflink)', c:'CubeCoW', v:1.7, src:'[req] XFS reflink'},
+        {s:'sandbox 收尾', c:'CubeShim', v:1.2, src:'[req]'},
+        {s:'MicroVM 创建', c:'CubeHypervisor', v:1.0, src:'[stat] LaunchVmm'},
+        {s:'快照恢复 init', c:'CubeShim', v:0.1, src:'[req]'}
+      ]
+    },
+    pause: {
+      color:'#eb6834', dark:'#b84a1c', max:129.8, badge:'pause',
+      title:'Pause · pause', total:'总 p50 = 216.3 ms = API+Master 5.6 ＋ Cubelet 自身 26.9 ＋ Shim 180.8',
+      rows:[
+        {s:'内存快照（全窗）', c:'CubeHypervisor', v:129.8, src:'[req]', note:'= dump 拷贝 25 ＋ 落盘冲刷 107 [perf]', dom:1},
+        {s:'冻结+断连固定窗', c:'CubeShim', v:51.4, src:'[req] 对快慢实例恒定', note:'已知 50ms sleep（等日志转发中止）'},
+        {s:'编排触发', c:'AutoPause', v:26.9, src:'[join] workflow−span'},
+        {s:'就绪返回（上行）', c:'CubeAPI＋Master', v:5.6, src:'[join] RTT−workflow'}
+      ]
+    },
+    resume: {
+      color:'#1baf7a', dark:'#0f6b4f', max:145.3, badge:'resume',
+      title:'Resume · resume', total:'总 p50 = 245.1 ms = API+Master 7.4 ＋ Cubelet 自身 37.6 ＋ Shim 197.9',
+      rows:[
+        {s:'VM 恢复启动→agent 就绪', c:'Hypervisor×内核×guest', v:145.3, src:'[req]', note:'含 RestoreVm 32 + KVM 状态恢复 + guest 恢复执行', dom:1},
+        {s:'编排触发', c:'AutoResume', v:37.6, src:'[join] workflow−span'},
+        {s:'内存恢复', c:'CubeHypervisor', v:37.1, src:'[req]', note:'发生在 agent 就绪之后'},
+        {s:'容器恢复', c:'CubeShim×Agent', v:10.1, src:'[req] create container by restore'},
+        {s:'就绪返回（上行）', c:'CubeAPI＋Master', v:7.4, src:'[join] RTT−workflow'},
+        {s:'sandbox 收尾', c:'CubeShim', v:1.7, src:'[req]'},
+        {s:'reflink 恢复', c:'CubeCoW', v:1.6, src:'[req]'},
+        {s:'MicroVM 再拉起', c:'CubeHypervisor', v:1.0, src:'[stat] LaunchVmm'}
+      ]
+    }
+  };
+
+  function el(tag, cls, txt){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+
+  function showTip(tip, e, r){
+    tip.textContent = '';
+    tip.appendChild(el('span','t-stage', (r.dom ? '★ ' : '') + r.s));
+    tip.appendChild(el('span','t-comp', r.c));
+    tip.appendChild(el('span','t-val', r.v + ' ms'));
+    tip.appendChild(el('span','t-src', r.note || r.src));
+    tip.style.display = 'block';
+    moveTip(tip, e);
+  }
+  function moveTip(tip, e){
+    var pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    var x = e.clientX + pad, y = e.clientY + pad;
+    if (x + w > window.innerWidth - 8)  x = e.clientX - w - pad;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - pad;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+
+  function build(){
+    var root = document.getElementById('p50chart');
+    var panels = root.querySelector('.panels');
+    var tip = root.querySelector('.p50-tip');
+    panels.textContent = '';
+
+    Object.keys(P50).forEach(function(key){
+      var d = P50[key];
+      var fig = el('figure','panel');
+      fig.style.setProperty('--bar', d.color);
+      fig.style.setProperty('--bar-dark', d.dark);
+
+      var cap = el('figcaption');
+      cap.appendChild(el('span','op-badge op-'+d.badge, d.badge));
+      cap.appendChild(el('span','cap-title', d.title));
+      cap.appendChild(el('span','cap-total', d.total));
+      fig.appendChild(cap);
+
+      d.rows.forEach(function(r){
+        var row = el('div', 'bar-row' + (r.dom ? ' dom' : ''));
+        row.tabIndex = 0;
+        row.setAttribute('role','img');
+        row.setAttribute('aria-label', r.s + ' ' + r.v + ' ms');
+
+        var lab = el('div','bar-label');
+        lab.appendChild(el('span','stage-name', (r.dom ? '★ ' : '') + r.s));
+        lab.appendChild(el('span','stage-comp', r.c));
+
+        var track = el('div','bar-track');
+        var fill = el('div','bar-fill');
+        fill.style.width = Math.max(0.6, (r.v / d.max) * 100).toFixed(1) + '%';
+        track.appendChild(fill);
+
+        var val = el('div','bar-value');
+        val.appendChild(document.createTextNode(String(r.v)));
+        val.appendChild(el('span','u',' ms'));
+
+        row.appendChild(lab); row.appendChild(track); row.appendChild(val);
+
+        row.addEventListener('pointerenter', function(e){ showTip(tip, e, r); });
+        row.addEventListener('pointermove',  function(e){ moveTip(tip, e); });
+        row.addEventListener('pointerleave', function(){ tip.style.display = 'none'; });
+        row.addEventListener('focus', function(e){ showTip(tip, e, r); });
+        row.addEventListener('blur',  function(){ tip.style.display = 'none'; });
+
+        fig.appendChild(row);
+      });
+      panels.appendChild(fig);
+    });
+  }
+
+  build();
+})();
+</script>
+</body>
+</html>

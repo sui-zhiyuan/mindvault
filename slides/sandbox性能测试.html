@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CubeSandbox 并发性能数据看板</title>
+<style>
+  :root{
+    --c-create:#3b82f6; --c-pause:#f59e0b; --c-resume:#10b981;
+    --c-fail:#ef4444; --c-shim:#7c3aed; --c-gray:#94a3b8;
+    --ink:#0f172a; --sub:#64748b; --line:#e2e8f0; --bg:#f1f5f9;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg); color:var(--ink); padding:28px 20px 60px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{margin-bottom:26px;}
+  header h1{font-size:26px; letter-spacing:.5px;}
+  header .meta{color:var(--sub); font-size:13px; margin-top:6px;}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;}
+  .chip{background:#fff; border:1px solid var(--line); border-radius:20px;
+        padding:7px 14px; font-size:13px; box-shadow:0 1px 2px rgba(15,23,42,.05);}
+  .chip b{color:var(--c-create);}
+  h2{font-size:19px; margin:34px 0 4px; display:flex; align-items:center; gap:10px;}
+  h2 .no{background:var(--ink); color:#fff; border-radius:8px; font-size:13px;
+         width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; flex:none;}
+  .sec-desc{color:var(--sub); font-size:13px; margin-bottom:14px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 18px 14px;
+        box-shadow:0 1px 3px rgba(15,23,42,.06);}
+  .card h3{font-size:15px; margin-bottom:2px;}
+  .card .sub{color:var(--sub); font-size:12.5px; margin-bottom:10px;}
+  .note{color:var(--sub); font-size:12px; margin-top:8px; line-height:1.6;
+        border-top:1px dashed var(--line); padding-top:8px;}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:#334155; margin:2px 0 6px;}
+  .legend .dot{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px;}
+  svg.chart{display:block; width:100%; height:auto;}
+  svg text{font-family:inherit;}
+  svg .axis{font-size:11px; fill:#64748b;}
+  svg .vlab{font-size:11px; font-weight:600;}
+  svg .xlab2{font-size:10px;}
+  /* 总览表 */
+  table.sum{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line);
+            border-radius:14px; overflow:hidden; font-size:13.5px;}
+  table.sum th, table.sum td{padding:11px 14px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top;}
+  table.sum tr:last-child td{border-bottom:none;}
+  table.sum thead th{background:#f8fafc; font-size:12.5px; color:var(--sub); font-weight:600;}
+  table.sum td b{font-size:15px;}
+  .op-dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px;}
+  .good{color:#059669;} .bad{color:var(--c-fail);}
+  /* 失败构成堆叠条 */
+  .stack-row{margin:14px 0 4px;}
+  .stack-label{font-size:13px; font-weight:600; margin-bottom:6px; display:block;}
+  .stack-bar{display:flex; height:30px; border-radius:7px; overflow:hidden; min-width:200px;}
+  .seg{display:flex; align-items:center; justify-content:center; color:#fff; font-size:11.5px; font-weight:600; white-space:nowrap;}
+  .stack-legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--sub); margin-top:10px;}
+  /* callout */
+  .callout{background:#fff; border:1px solid var(--line); border-left:4px solid var(--c-create);
+           border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.75;}
+  .callout.warn{border-left-color:var(--c-fail);}
+  .callout code{background:#f1f5f9; padding:1px 6px; border-radius:5px; font-size:12px;}
+  footer{margin-top:40px; color:var(--sub); font-size:12px; line-height:1.8; border-top:1px solid var(--line); padding-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>CubeSandbox 并发性能数据看板</h1>
+  <div class="meta">最优并发测试 · 2026-09-16 · 192.168.25.90（Kunpeng ARM64 / 384 核 / 2.2 TiB）· CubeSandbox v0.7.0 原版 · 配套《最优并发性能测试报告》</div>
+  <div class="chips">
+    <div class="chip">100 规模最优 c：<b>create 25</b> · <b>pause 25-50</b> · <b>resume 10-25</b></div>
+    <div class="chip">1500 规模最优 c：<b>三操作统一 100</b>（= Cubelet <code>flows.create.concurrent</code> 设计上限）</div>
+    <div class="chip">1500 失败主因：<b>ResetVm 3s 对时超时</b>（约七成；3s→30s 补丁实测可消除）</div>
+    <div class="chip">计时语义：栅栏起跑（线程启动不计入）</div>
+  </div>
+</header>
+
+<!-- ═══ 1. 三规模总览 ═══ -->
+<h2><span class="no">1</span>三规模总览（n = 1 / 100 / 1500）</h2>
+<div class="sec-desc">n=100/1500 采用各自最优并发 c 的滚动窗口；整波 wall = 统一起跑令 GO → 最后一个结果，含线程启动之外的全部时间。</div>
+<table class="sum">
+  <thead><tr>
+    <th style="width:90px">规模</th><th style="width:130px">最优 c</th>
+    <th><span class="op-dot" style="background:var(--c-create)"></span>create</th>
+    <th><span class="op-dot" style="background:var(--c-pause)"></span>pause</th>
+    <th><span class="op-dot" style="background:var(--c-resume)"></span>resume</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td><b>n = 1</b><br><span style="color:var(--sub);font-size:12px">单发</span></td>
+      <td>1</td>
+      <td>RTT <b>49 ms</b><br><span style="color:var(--sub);font-size:12px">基线 5 轮 avg 51.2 / p95 62</span></td>
+      <td>RTT <b>166 ms</b><br><span style="color:var(--sub);font-size:12px">基线 avg 157-193 / p99 ≤ 237</span></td>
+      <td>RTT <b>65-152 ms</b><br><span style="color:var(--sub);font-size:12px">基线 62-65；单发波动大</span></td>
+    </tr>
+    <tr>
+      <td><b>n = 100</b></td>
+      <td>25 / 25 / 10-25</td>
+      <td><span class="good">100%</span> · 整波 <b>0.38-0.39 s</b><br><span style="color:var(--sub);font-size:12px">p95 117 ms · 吞吐 262/s</span></td>
+      <td><span class="good">100%</span> · 整波 <b>1.57-1.84 s</b><br><span style="color:var(--sub);font-size:12px">POST p95 314-518 ms（含状态确认）</span></td>
+      <td><span class="good">100%</span> · 整波 <b>1.75-2.09 s</b><br><span style="color:var(--sub);font-size:12px">POST p95 140-319 ms（含状态确认）</span></td>
+    </tr>
+    <tr>
+      <td><b>n = 1500</b></td>
+      <td>100（三操作统一）</td>
+      <td><b>90.5%</b>（1357/1500）· 整波 <b>157.6 s</b><br><span style="color:var(--sub);font-size:12px">p50 6.3 s / p95 23.5 s（30s 路由契约内）</span></td>
+      <td><span class="good">100%</span>（1357/1357）· 整波 <b>28.6 s</b><br><span style="color:var(--sub);font-size:12px">p50 1.9 s / p95 4.0 s</span></td>
+      <td><b>96.4%</b>（1308/1357）· 整波 <b>50.5 s</b><br><span style="color:var(--sub);font-size:12px">p50 1.6 s / p95 8.4 s</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══ 2. 1500 c 扫描 ═══ -->
+<h2><span class="no">2</span>1500 规模：并发 c 扫描——超过 100 即崩溃</h2>
+<div class="sec-desc">滚动窗口，verify=off 方法论（POST 2xx + Cubelet 日志对账）。c=100 是 Cubelet create 工作流硬限流的设计值：resume 超限被<b>秒拒</b>，create 超限在<b>上游排队挤爆 30s 路由超时</b>，pause 无流控但资源侧劣化撞 120s。</div>
+<div class="grid">
+  <div class="card">
+    <h3>成功率随 c 的崩溃曲线</h3>
+    <div class="sub">c=100 → 300 → 600（pause/resume 作用于上一波幸存沙箱）</div>
+    <div id="c_collapse"></div>
+    <p class="note">pause@c=300 虽 100% 成功但 p95 115.8s 已贴住 120s 路由超时；resume@c=600 的 82.1% 基于 n=112（pause@c600 崩溃后仅 112 个可恢复），且 12 个失败为流控秒拒。</p>
+  </div>
+  <div class="card">
+    <h3>create 的五条路（1500 全量拉起）</h3>
+    <div class="sub">30s 产品路由契约内 vs 放宽超时后的单波</div>
+    <div id="c_create_paths"></div>
+    <p class="note">契约内最优 = c=100 滚动（90.5%）；追求全量最快 = c=1500 单波 + 路由超时放宽到 300s：62.2 s 完成 99.93%（1499/1500）。两者不可兼得。</p>
+  </div>
+</div>
+<div style="margin-top:16px" class="callout">
+  <b>为什么三个操作的最优值都收敛到 c=100？</b>　部署配置 <code>/usr/local/services/cubetoolbox/Cubelet/config/config.toml</code> 中
+  <code>flows.create.concurrent = 100</code>（工作流引擎 TryAcquire <b>非阻塞</b>，超限立即报 130513 <code>flow [create] exceed limited</code>）。
+  create 与 resume 共用该流程：resume 在飞 &gt;100 → <b>立即 500 秒拒</b>（c=300 实测 805/912 秒拒）；create 在飞 &gt;100 → 上游排队直至 30s 408（c=600 实测 901×408）。
+  pause 不走流控，劣化纯资源侧（数百并发快照写争用）。c=100 不是经验折中，而是<b>贴合系统的设计并发天花板</b>。
+</div>
+
+<!-- ═══ 3. 100 规模最优 c ═══ -->
+<h2><span class="no">3</span>100 规模：最优 c 的权衡（墙 vs 单次延迟）</h2>
+<div class="sec-desc">pause/resume 每个 c 用全新沙箱（避免重复 pause 劣化 7-30× 污染数据）；含状态确认的整波墙。</div>
+<div class="grid">
+  <div class="card">
+    <h3>整波墙（越短越好）</h3>
+    <div class="sub">n=100，统一起跑后到全部完成</div>
+    <div id="c_wall100"></div>
+    <p class="note">create c=100 为 4 轮区间（0.40-1.39s 抖动，取 0.40）；resume c=50 的 8.40s 是 1 例 ResetVm 3s 悬崖失败重试拖长的异常值，其延迟分布仍有效。create 在 c=25 后墙不再缩短。</p>
+  </div>
+  <div class="card">
+    <h3>单次请求延迟 p95（越低越好）</h3>
+    <div class="sub">纯服务端 RTT，不含排队起表</div>
+    <div id="c_p95_100"></div>
+    <p class="note">c 由 25 → 100：create p95 94.8→~419 ms、pause 429→787 ms、resume 140→1091 ms——<b>加并发只抬高单次延迟，不再缩短整波</b>。故 100 规模推荐 create 25 / pause 25 / resume 10。</p>
+  </div>
+</div>
+
+<!-- ═══ 4. 机制 ═══ -->
+<h2><span class="no">4</span>机制：占用爬坡与负载镜像（1500 规模 c=100 波内）</h2>
+<div class="sec-desc">create 延迟不是并发数的函数，而是<b>已运行 VM 数（占用）</b>的函数——波次自己制造超卖环境：2706 vCPU 挤 384 物理核（~8:1），loadavg 爬到 ~2100。</div>
+<div class="grid">
+  <div class="card">
+    <h3>create 波内 RTT 爬坡（11× 劣化）</h3>
+    <div class="sub">按起跑顺序四分位：Q1 占用≈0 → Q4 占用≈1300+</div>
+    <div id="c_ramp"></div>
+    <p class="note">晚到的 create 被"既有租户"饿到接近 30s 路由超时——这正是 1500 规模失败集中的地方（失败为占用驱动，降 c 不能避免）。</p>
+  </div>
+  <div class="card">
+    <h3>负载镜像：pause 越做越快，resume 越做越慢</h3>
+    <div class="sub">波首 vs 波尾的平均 RTT（ms）</div>
+    <div id="c_mirror"></div>
+    <p class="note">pause 波内 VM 陆续暂停释放 CPU（loadavg 2100→280），RTT 递减；resume 波内 VM 陆续恢复、负载爬回，RTT 递增（波尾取 Q3 值）。大规模滚动操作存在"先来先服务"的公平性效应。</p>
+  </div>
+</div>
+
+<!-- ═══ 5. 失败构成 ═══ -->
+<h2><span class="no">5</span>1500 规模失败构成：七成是同一个 3 秒超时</h2>
+<div class="sec-desc">c=100 最优配置下的失败分解（与 §2 崩溃曲线同轮数据）。</div>
+<div class="grid">
+  <div class="card">
+    <h3>失败分解（ocB2_c100）</h3>
+    <div class="sub">create 143/1500 失败 · resume 49/1357 失败 · pause 0 失败</div>
+    <div class="stack-row">
+      <span class="stack-label">create — 143 个失败</span>
+      <div class="stack-bar">
+        <div class="seg" style="width:67.1%;background:var(--c-fail)">96× ResetVm 3s</div>
+        <div class="seg" style="width:28.0%;background:#f97316">40× 408</div>
+        <div class="seg" style="width:4.9%;background:var(--c-gray)">7</div>
+      </div>
+    </div>
+    <div class="stack-row">
+      <span class="stack-label">resume — 49 个失败</span>
+      <div class="stack-bar">
+        <div class="seg" style="width:69.4%;background:var(--c-fail)">34× ResetVm 3s</div>
+        <div class="seg" style="width:30.6%;background:#f97316">15× run container</div>
+      </div>
+    </div>
+    <div class="stack-legend">
+      <span><span class="op-dot" style="background:var(--c-fail)"></span>ResetVm 3s 对时超时（C5）</span>
+      <span><span class="op-dot" style="background:#f97316"></span>HTTP 408 路由超时 / run container</span>
+      <span><span class="op-dot" style="background:var(--c-gray)"></span>其他</span>
+    </div>
+    <p class="note">pause 路径既无 ResetVm 对时也无流控（停 vCPU + 写快照不需要 guest 配合），故 1357/1357 全部成功。</p>
+  </div>
+  <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
+    <h3>根因与修复证据（C5）</h3>
+    <div class="sub">shim→guest 对时 RPC 硬超时 3s（CubeShim sb.rs:107）</div>
+    <div class="callout warn" style="flex:1">
+      超卖宿主机上刚拉起的 guest 3s 内抢不到 CPU → RPC 超时 → 工作流失败。<b>实测最差对时 13.7s</b>，3s 的设置在高占用下不够用。<br><br>
+      <b>修复已验证</b>：把超时 3s→30s 后复测 5 轮，<b>ResetVm 错误 0/7500，成功率 ~93% → 99.5%</b>；残余 0.5% 是下一层同类问题（container 模块 10s 超时）。<br><br>
+      <b>这是把 1500 规模 create/resume 成功率从 90-96% 提到 ~99% 的唯一大杠杆。</b>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 6. C6 泄漏 ═══ -->
+<h2><span class="no">6</span>C6：shim 进程泄漏——失败路径的慢性毒害与清理验证</h2>
+<div class="sec-desc">create 失败（~30%）与 resume 失败（~80-100%）留下 CubeMaster 不感知、永不退出的 containerd-shim 孤儿，每个空转 ~2 核；pause 失败不泄漏。测试日累积 683 个 ≈ 320 核。</div>
+<div class="grid">
+  <div class="card">
+    <h3>泄漏时间线：失败数 vs 遗留 shim</h3>
+    <div class="sub">按测试波次时间窗对账（2026-09-16）</div>
+    <div id="c_leak"></div>
+    <p class="note">13:18 的 pause 崩溃波 484 个失败只留下 ~5 个 shim——pause 失败不泄漏的直接证据。create/resume 失败约 30%/80-100% 留下 husk。</p>
+  </div>
+  <div class="card">
+    <h3>污染 → 清理 → 基线恢复（100 规模 c=25 整波墙）</h3>
+    <div class="sub">干净基线 → 683 个泄漏 shim 污染态 → SIGKILL 清理后复测</div>
+    <div id="c_cleanup"></div>
+    <p class="note">清理：SIGTERM 发出 30s 后 683 个全部存活（<b>husk 不响应常规终止信号</b>），<code>pkill -9</code> 后清零，宿主机 CPU us 88.2%→4.2%。ocC100b 复测三项全部恢复基线（create p95 117.7ms vs 基线 117.4ms，逐毫秒一致）。</p>
+  </div>
+</div>
+
+<footer>
+  数据来源（服务器 /home/sunrui/CubeSandbox/.bench/）：ocN1（n=1 单发）· ocA0/A1/A2 + ocP100_c* + ocC100b（100 规模）· ocB2_c100/c300/c600（1500 规模主数据）· ocB_c100/ocC100/ocC1500（污染态轮，见 §6）·《启动性能测试报告》T3-3/T3-4（1500 单波）。<br>
+  计时语义：cube-bench v2 栅栏起跑——全部 worker 起完挂起，GO 信号后开始计时；-c 为同时在飞数（信号量），n&gt;c 为滚动窗口。<br>
+  配套文档：《最优并发性能测试报告》《启动性能测试报告》《暂停恢复性能测试报告》《并发模型说明报告》。
+</footer>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const C = {create:'#3b82f6', pause:'#f59e0b', resume:'#10b981', fail:'#ef4444', shim:'#7c3aed'};
+
+function sv(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function niceMax(v){
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const d = v/p;
+  const n = d<=1?1 : d<=2?2 : d<=2.5?2.5 : d<=5?5 : 10;
+  return n*p;
+}
+
+/* 分组柱状图：cfg = {mount, cats, series:[{name,color,values}], yMax, yFmt, barFmt} */
+function groupedBar(cfg){
+  const mount = document.getElementById(cfg.mount);
+  const lg = document.createElement('div'); lg.className = 'legend';
+  cfg.series.forEach(s=>{
+    const sp = document.createElement('span');
+    sp.innerHTML = '<span class="dot" style="background:'+s.color+'"></span>'+s.name;
+    lg.appendChild(sp);
+  });
+  mount.appendChild(lg);
+
+  const W=760, H=384, mL=64, mR=14, mT=18, mB=66;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  const vals = cfg.series.flatMap(s=>s.values).filter(v=>v!=null);
+  const yMax = cfg.yMax || niceMax(Math.max(...vals)*1.12);
+  const svg = sv('svg', {viewBox:'0 0 '+W+' '+H, class:'chart', width:'100%'}, mount);
+
+  for(let i=0;i<=5;i++){
+    const y = mT + ih - ih*i/5;
+    sv('line',{x1:mL, x2:W-mR, y1:y, y2:y, stroke:'#eef2f7'}, svg);
+    const t = sv('text',{x:mL-8, y:y+4, 'text-anchor':'end', class:'axis'}, svg);
+    t.textContent = (cfg.yFmt||(v=>v))(yMax*i/5);
+  }
+  sv('line',{x1:mL, x2:W-mR, y1:mT+ih, y2:mT+ih, stroke:'#cbd5e1'}, svg);
+
+  const n = cfg.cats.length, slot = iw/n, groupW = slot*0.72, bw = groupW/cfg.series.length;
+  cfg.cats.forEach((cat,ci)=>{
+    const cx = mL + slot*ci + slot/2;
+    cfg.series.forEach((s,si)=>{
+      const v = s.values[ci];
+      if(v==null) return;
+      const x = cx - groupW/2 + si*bw;
+      const h = ih*v/yMax, y = mT+ih-h;
+      sv('rect',{x:x+1.5, y:y, width:bw-3, height:Math.max(h,1.5), rx:3, fill:s.color}, svg);
+      const t = sv('text',{x:x+bw/2, y:y-5, 'text-anchor':'middle', class:'vlab', fill:'#334155'}, svg);
+      t.textContent = (cfg.barFmt||(v=>v))(v);
+    });
+    const lines = String(cat).split('|');
+    lines.forEach((ln,li)=>{
+      const t = sv('text',{x:cx, y:H-mB+18+li*13, 'text-anchor':'middle',
+                           class:li>0?'axis xlab2':'axis'}, svg);
+      t.textContent = ln;
+    });
+  });
+}
+
+/* ── 图 2A：成功率崩溃 ── */
+groupedBar({
+  mount:'c_collapse', yMax:100,
+  yFmt:v=>v+'%', barFmt:v=>v+'%',
+  cats:['c=100','c=300','c=600'],
+  series:[
+    {name:'create', color:C.create, values:[90.5, 60.8, 39.7]},
+    {name:'pause',  color:C.pause,  values:[100, 100, 18.8]},
+    {name:'resume', color:C.resume, values:[96.4, 11.3, 82.1]},
+  ]
+});
+
+/* ── 图 2B：create 五条路 ── */
+groupedBar({
+  mount:'c_create_paths', yMax:100,
+  yFmt:v=>v+'%', barFmt:v=>v+'%',
+  cats:['c=100|滚动·契约内','c=300|滚动','c=600|滚动','c=1500|单波·30s 契约','c=1500|单波·300s 放宽'],
+  series:[{name:'create 成功率', color:C.create, values:[90.5, 60.8, 39.7, 73.2, 99.93]}]
+});
+
+/* ── 图 3A：100 规模整波墙 ── */
+groupedBar({
+  mount:'c_wall100', yMax:10,
+  yFmt:v=>v+'s', barFmt:v=>v+'s',
+  cats:['c=10','c=25','c=50','c=100'],
+  series:[
+    {name:'create', color:C.create, values:[0.69, 0.38, 0.40, 0.40]},
+    {name:'pause',  color:C.pause,  values:[2.60, 1.84, 1.78, 1.73]},
+    {name:'resume', color:C.resume, values:[2.09, 2.28, 8.40, 2.38]},
+  ]
+});
+
+/* ── 图 3B：100 规模单次 p95 ── */
+groupedBar({
+  mount:'c_p95_100', yMax:1200,
+  yFmt:v=>(v>=1000? (v/1000)+'s' : v+'ms'), barFmt:v=>Math.round(v),
+  cats:['c=10','c=25','c=50','c=100'],
+  series:[
+    {name:'create p95', color:C.create, values:[94.8, 117.4, 243.6, 419]},
+    {name:'pause p95',  color:C.pause,  values:[429.4, 517.7, 693.3, 786.9]},
+    {name:'resume p95', color:C.resume, values:[139.6, 336.2, 635.3, 1091.3]},
+  ]
+});
+
+/* ── 图 4A：占用爬坡 ── */
+groupedBar({
+  mount:'c_ramp', yMax:30,
+  yFmt:v=>v+'s', barFmt:v=>v+'s',
+  cats:['Q1|占用≈0','Q2|~400 VM','Q3|~900 VM','Q4|~1300 VM'],
+  series:[
+    {name:'RTT avg',  color:C.create, values:[1.49, 4.35, 10.70, 16.96]},
+    {name:'RTT p95',  color:'#93c5fd', values:[4.11, 8.21, 19.83, 27.79]},
+  ]
+});
+
+/* ── 图 4B：负载镜像 ── */
+groupedBar({
+  mount:'c_mirror', yMax:6000,
+  yFmt:v=>(v>=1000? (v/1000)+'s' : v+'ms'), barFmt:v=>Math.round(v),
+  cats:['波首（Q1）','波尾（Q4/Q3）'],
+  series:[
+    {name:'pause 波',  color:C.pause,  values:[3282, 1243]},
+    {name:'resume 波', color:C.resume, values:[1009, 5334]},
+  ]
+});
+
+/* ── 图 6A：泄漏时间线 ── */
+groupedBar({
+  mount:'c_leak', yMax:1000,
+  yFmt:v=>v, barFmt:v=>v,
+  cats:['12:20|ocB_c100','12:54|B2_c100|resume','13:07|B2_c300|create','13:15|B2_c600|create','13:18|c600|pause','13:29|ocC|复测','13:38|ocC|resume'],
+  series:[
+    {name:'该窗失败数',   color:C.fail, values:[192, 49, 588, 904, 484, 466, 66]},
+    {name:'遗留 shim 数', color:C.shim, values:[24, 35, 172, 307, 5, 9, 53]},
+  ]
+});
+
+/* ── 图 6B：清理验证 ── */
+groupedBar({
+  mount:'c_cleanup', yMax:20,
+  yFmt:v=>v+'s', barFmt:v=>v+'s',
+  cats:['create','pause','resume'],
+  series:[
+    {name:'干净基线（ocA1/ocP100）',     color:'#94a3b8', values:[0.38, 1.84, 2.28]},
+    {name:'污染态 ocC100（683 shim）',   color:C.fail,    values:[12.8, 4.54, 8.35]},
+    {name:'清理后 ocC100b',              color:C.resume,  values:[0.39, 1.57, 1.75]},
+  ]
+});
+</script>
+</body>
+</html>
