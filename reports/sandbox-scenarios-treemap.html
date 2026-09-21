@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>沙箱应用场景全景（面积 = 应用量，颜色 = 腾讯 / 非腾讯）</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1b1b1b; --muted:#6b6b6b;
+    --title:#b3121b; --line:#d8dde3;
+    --tx-fill:#f6d3d6; --tx-line:#b3121b;      /* 腾讯系 */
+    --ot-fill:#d3e4f6; --ot-line:#1f5fa8;      /* 非腾讯 */
+    --sans:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+  }
+  html,body{margin:0;height:100%;background:#05070c;font-family:var(--sans);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .canvas{width:1280px;height:720px;position:relative;transform-origin:center center;
+          flex:0 0 auto;background:var(--bg);color:var(--fg);overflow:hidden;}
+
+  /* —— 只占左半边：x 27 → 625（598 宽），右半边留空 —— */
+  .s-title{position:absolute;left:27px;top:18px;width:598px;
+           font-size:18.5px;font-weight:700;line-height:1.25;color:var(--title);white-space:nowrap;}
+  .legend{position:absolute;left:27px;top:52px;width:598px;height:18px;
+          display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);}
+  .legend i{display:inline-block;width:22px;height:12px;margin-right:6px;vertical-align:-1px;
+            border:1px solid var(--line);}
+  #map{position:absolute;left:27px;top:78px;width:598px;height:622px;}
+  .cell{position:absolute;box-sizing:border-box;border:1px solid;overflow:hidden;
+        padding:7px 8px;display:flex;flex-direction:column;}
+  .cell .nm{font-size:12.5px;font-weight:700;line-height:1.2;flex:0 0 auto;
+            border-bottom:1px solid rgba(0,0,0,.12);padding-bottom:3px;margin-bottom:4px;}
+  .cell .ds{font-size:11px;line-height:1.34;color:#333b4a;overflow:hidden;
+            flex:1 1 auto;min-height:0;}
+  .tx{background:var(--tx-fill);border-color:var(--tx-line);}
+  .ot{background:var(--ot-fill);border-color:var(--ot-line);}
+  .src{position:absolute;left:27px;top:703px;width:598px;font-size:10.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="canvas">
+    <h2 class="s-title">沙箱应用场景全景：面积 = 应用量，颜色区分腾讯系与非腾讯</h2>
+    <div class="legend">
+      <span><i style="background:var(--tx-fill);border-color:var(--tx-line)"></i>腾讯系生态</span>
+      <span><i style="background:var(--ot-fill);border-color:var(--ot-line)"></i>非腾讯（客户 / 其他厂商）</span>
+      <span>面积按经验估算，字号自适应填满方块</span>
+    </div>
+    <div id="map"></div>
+    <div class="src">场景来自 CubeSandbox 官方案例、AgentENV 公开材料与本 PPT 的内部规划；面积仅为经验性示意，可在文件顶部 scenes 数组调整</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   场景表：w = 应用量权重（面积 ∝ w，经验估算，可随意改），
+           grp = 'tx'（腾讯系） / 'ot'（非腾讯）
+   说明文字长度按方块面积写：权重大的给 3–4 句，小的给 2 句
+   ============================================================ */
+const scenes = [
+  { w:14, grp:'tx', name:'代码执行隔离',
+    desc:'模型生成的命令、脚本与工具调用都在独立 MicroVM 内执行，平台只放行白名单命令，出站访问按域名收敛。即使 Harness 被提示注入，破坏也被关在沙箱里，逃不出独立内核。代表：腾讯 tRPC 的 trpc-agent-go 安全代码执行后端。' },
+  { w:13, grp:'ot', name:'RL rollout 与数据合成',
+    desc:'批量并行拉起 episode，每个 episode 一份干净可复现的环境，跑的正是模型自己写的不可信代码：死循环、内存泄漏、fork 炸弹、异常网络调用都被限制在沙箱内。云知声实测单节点稳态 80–100 实例、双节点 160–200，瓶颈在内存侧。' },
+  { w:12, grp:'ot', name:'多租户沙箱平台',
+    desc:'把 AI 中台里每个租户、每个会话放进独立沙箱，用户之间文件与网络物理隔离；再用 owner_id、租约与 fencing token 统一记账，避免迟到请求误删他人沙箱、僵尸租约占满配额。代表：广晟数科 SIN PaaS 沙箱中台。' },
+  { w:11, grp:'tx', name:'代码解释器',
+    desc:'给大模型一个会写代码、能自愈、可并行的解释器：数据分析、画图、跑脚本都在沙箱里完成，工具时延与推理时延错峰，理论上支撑大比例超分。代表：腾讯混元 hy3 × Cube Sandbox 的实战组合。' },
+  { w:9,  grp:'tx', name:'知识库 Agent 持久化',
+    desc:'会话级常驻沙箱：装好的技能打成快照当模板，新会话秒级就位；空闲自动暂停保住内存态，下一轮连接自动唤醒，用户体感"对话还在、环境还在"。代表：腾讯开源企业知识平台 WeKnora。' },
+  { w:8,  grp:'ot', name:'云端 Agent 运行节点',
+    desc:'沙箱从"用完即弃的执行容器"升级为可备份、可回退的独立运行节点，守护进程与 Agent 整体入沙箱。启动从 10 秒级压到 100 毫秒内，同时省掉外部 SaaS 费用与 VPN 依赖。代表：联想研究院云端 Agent（自 Daytona 迁移）。' },
+  { w:8,  grp:'ot', name:'平台化与集成',
+    desc:'沙箱作为集群底座被编排与运维：K8s 上部署控制面与计算节点（openFuyao）、常驻 Agent 平台（Hermes）、noVNC 桌面沙箱做 GUI 自动化，以及 LangChain / Claude Code / OpenCode / Pi Agent 等框架的即插即用接入。' },
+  { w:7,  grp:'ot', name:'浏览器 Agent',
+    desc:'把浏览器运行时整体搬进沙箱，页面渲染、点击、抓取都在隔离环境内完成，避免自动化脚本把宿主环境或用户数据带出去；沙箱回收后不留运行痕迹。代表：Lexmount AI 的浏览器 Agent。' },
+  { w:6,  grp:'tx', name:'Agent 平台底座',
+    desc:'作为腾讯云侧数字助手与 AgentHub 的默认执行环境，OpenClaw 一类助手的创建、托管与运行直接落在 Cube Sandbox 上，开箱即用，无需自建 warm pool。' },
+  { w:6,  grp:'ot', name:'Agentic RL 训练',
+    desc:'用 MicroVM + 内存 CoW + fork 支撑 agentic RL：每轮从模板分叉出探索环境、训练完即回收，官方称 boot/resume <50ms、pause <100ms。代表：AgentENV（清华 MADSys + 月之暗面）。' },
+  { w:6,  grp:'ot', name:'Android 模拟',
+    desc:'在微 VM 内运行 Android 虚拟设备（Cuttlefish 一类），为手机 App 的自动化操作与兼容性验证提供模拟场景；本 PPT P6/P16 已有相关数据，当前属内部规划。' }
+];
+
+/* ---------- squarified treemap：把方块拼满整个矩形 ---------- */
+function worst(row, len){
+  const s = row.reduce((a,b)=>a+b.area,0);
+  const mx = Math.max(...row.map(r=>r.area)), mn = Math.min(...row.map(r=>r.area));
+  return Math.max((len*len*mx)/(s*s), (s*s)/(len*len*mn));
+}
+function squarify(items, x, y, w, h, out){
+  if(!items.length || w<=0 || h<=0) return;
+  const total = items.reduce((a,c)=>a+c.area,0);
+  if(total<=0) return;
+  if(items.length===1){                       /* 最后一块直接填满剩余矩形 */
+    out.push(Object.assign({}, items[0], {x, y, w, h}));
+    return;
+  }
+  const vertical = w >= h;
+  const len = vertical ? h : w;
+  const row = [];
+  let i = 0;
+  while(i < items.length){
+    const cand = row.concat([items[i]]);
+    if(row.length===0 || worst(cand, len) <= worst(row, len)){ row.push(items[i]); i++; }
+    else break;
+  }
+  const last = (i >= items.length);           /* 最后一行/列，尺寸必须补齐 */
+  const rowArea = row.reduce((a,c)=>a+c.area,0);
+  if(vertical){
+    const rw = last ? w : rowArea / h;
+    let oy = y;
+    row.forEach((c, idx)=>{
+      const ch = (idx === row.length-1) ? (y + h - oy) : c.area / rw;
+      out.push(Object.assign({}, c, {x, y:oy, w:rw, h:ch}));
+      oy += ch;
+    });
+    squarify(items.slice(row.length), x+rw, y, w-rw, h, out);
+  }else{
+    const rh = last ? h : rowArea / w;
+    let ox = x;
+    row.forEach((c, idx)=>{
+      const cw = (idx === row.length-1) ? (x + w - ox) : c.area / rh;
+      out.push(Object.assign({}, c, {x:ox, y, w:cw, h:rh}));
+      ox += cw;
+    });
+    squarify(items.slice(row.length), x, y+rh, w, h-rh, out);
+  }
+}
+
+/* ---------- 字号自适应：把描述撑满方块，撑不下才降级 ----------
+   注意量的是 .ds 自身（它是被压缩的 flex 子项，量 cell 会误判为放得下） */
+function autoFit(cell, ds){
+  const full = ds.textContent;
+  const fits = () => ds.scrollHeight <= ds.clientHeight + 1;
+  let fs = 11;
+  ds.style.fontSize = fs + 'px';
+  while(!fits() && fs > 8)   { fs -= 0.25; ds.style.fontSize = fs + 'px'; }
+  while(fits()  && fs < 13.5){ fs += 0.25; ds.style.fontSize = fs + 'px'; }
+  while(!fits() && fs > 8)   { fs -= 0.25; ds.style.fontSize = fs + 'px'; }
+  if(!fits()){                                /* 兜底：最低字号仍放不下就省略号收尾 */
+    let t = full;
+    while(t.length > 6){
+      t = t.slice(0, -2);
+      ds.textContent = t + '…';
+      if(fits()) break;
+    }
+  }
+}
+
+function draw(){
+  const box = document.getElementById('map');
+  const W = box.clientWidth, H = box.clientHeight;
+  const total = scenes.reduce((a,s)=>a+s.w,0);
+  const k = (W*H)/total;
+  const items = scenes.map(s=>Object.assign({}, s, {area:s.w*k})).sort((a,b)=>b.area-a.area);
+  const out = [];
+  squarify(items, 0, 0, W, H, out);
+  box.innerHTML = '';
+  out.forEach(n=>{
+    if(n.w < 2 || n.h < 2) return;            /* 防御：不画亚像素碎片 */
+    const d = document.createElement('div');
+    d.className = 'cell ' + (n.grp==='tx' ? 'tx' : 'ot');
+    d.style.left   = n.x.toFixed(1)+'px';
+    d.style.top    = n.y.toFixed(1)+'px';
+    d.style.width  = n.w.toFixed(1)+'px';
+    d.style.height = n.h.toFixed(1)+'px';
+    d.title = n.name + '：' + n.desc;         /* 悬停看全文 */
+    d.innerHTML = '<div class="nm">'+n.name+'</div><div class="ds">'+n.desc+'</div>';
+    box.appendChild(d);
+    autoFit(d, d.querySelector('.ds'));
+  });
+}
+draw();
+window.addEventListener('resize', draw);
+</script>
+</body>
+</html>
