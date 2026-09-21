@@ -50,6 +50,8 @@ whenToUse: 用户说"做个 slide"、"生成 PPT/幻灯片/汇报页"、"把这�
     --accent:#1f5fa8;             /* 强调数字 */
     --serif:'Songti SC','SimSun',Georgia,serif;
     --sans:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+    /* 栅格常量：下方"页面栅格"一节与基础样式表都引用它们，勿删 */
+    --pad:27px; --col:598px; --gap:30px;
   }
   html,body{margin:0;height:100%;background:#05070c;font-family:var(--sans);overflow:hidden;}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
