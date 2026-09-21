@@ -59,6 +59,8 @@ LLVM 优化 path 参数优化	优化 llmv 层面自动向量化，针对 950 指
 图像	图像策管全链路	pipeline_image_full_min
 音频	ASR 音频准备	audio_asr_prep_canonical
 PDF	PDF 文档解析向量化	pipeline_pdf_full_min
+自动驾驶	自动驾驶多传感器索引	pipeline_ad_nuscenes_min
+
 
 
 # 任务2-3
