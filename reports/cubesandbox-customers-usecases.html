@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CubeSandbox 客户与使用场景</title>
+<style>
+  :root{
+    /* —— 浅色汇报模板，换主题只改这一块 —— */
+    --bg:#ffffff; --fg:#1b1b1b; --muted:#6b6b6b;
+    --title:#b3121b;
+    --line:#d8dde3;
+    --head:#dce9f7;
+    --card:#f5f7fa;
+    --note:#fdf3c8;
+    --green:#c9e7c2; --orange:#fbd9b5; --blue:#cfe4f7;
+    --accent:#1f5fa8;
+    --serif:'Songti SC','SimSun',Georgia,serif;
+    --sans:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+    /* 栅格常量（PPT 960.4×540pt × 4/3 = 1280×720px） */
+    --pad:27px; --col:598px; --gap:30px;
+  }
+  html,body{margin:0;height:100%;background:#05070c;font-family:var(--sans);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .canvas{width:1280px;height:720px;position:relative;transform-origin:center center;flex:0 0 auto;}
+  .slide{position:absolute;inset:0;background:var(--bg);color:var(--fg);
+         opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;}
+
+  /* —— 通用 —— */
+  .s-title{position:absolute;left:27px;top:20px;width:1226px;
+           font-size:27px;font-weight:700;line-height:1.3;color:var(--title);}
+  .cap{font-size:13px;color:var(--muted);margin:0 0 6px;}
+  .src{position:absolute;left:27px;top:701px;font-size:11px;color:var(--muted);}
+  .pg{position:absolute;right:27px;top:701px;font-size:11px;color:var(--muted);}
+
+  /* —— 总结带（方案 2）—— */
+  .band{position:absolute;left:27px;top:76px;width:1226px;height:136px;display:flex;}
+  .band-label{width:76px;flex:0 0 76px;background:var(--title);color:#fff;font-size:17px;font-weight:700;
+              display:flex;flex-direction:column;align-items:center;justify-content:center;
+              letter-spacing:3px;line-height:1.7;text-align:center;}
+  .band-body{flex:1;margin-left:14px;display:flex;flex-direction:column;justify-content:center;
+             gap:7px;font-size:16px;line-height:1.55;}
+
+  /* —— 两栏 —— */
+  .cols{position:absolute;left:27px;width:1226px;display:grid;
+        grid-template-columns:var(--col) var(--col);gap:var(--gap);}
+  .cols.m2{top:226px;height:470px;}
+  .cols.m3{top:80px;height:528px;}
+  .foot{position:absolute;left:27px;top:630px;width:1226px;height:66px;display:flex;}
+  .pane{overflow:hidden;display:flex;flex-direction:column;gap:8px;}
+
+  /* —— 表格 —— */
+  table.t{width:100%;border-collapse:collapse;table-layout:fixed;
+          font-size:13.5px;line-height:1.45;font-variant-numeric:tabular-nums;}
+  table.t th{background:var(--head);border:1px solid var(--line);padding:9px 8px;
+             text-align:left;font-weight:600;font-size:13.5px;}
+  table.t td{border:1px solid var(--line);padding:9px 8px;vertical-align:top;}
+  table.t td.no{text-align:center;color:var(--muted);font-size:12.5px;}
+  table.t td.ok{color:#1d6b2f;font-weight:600;}
+
+  /* —— 分层 / 分类图 —— */
+  .stack{flex:1;border:1px solid var(--line);background:var(--card);
+         padding:8px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box;}
+  .stack .row{display:flex;gap:6px;flex:1;align-items:stretch;}
+  .stack .cell{flex:1;background:var(--blue);border:1px solid #b9d4ee;padding:8px 10px;
+               font-size:13px;line-height:1.4;display:flex;flex-direction:column;justify-content:center;}
+  .stack .cell.g{background:var(--green);border-color:#a8d39f;}
+  .stack .cell.o{background:var(--orange);border-color:#eec296;}
+  .stack .cell.cat{flex:0 0 148px;background:var(--head);border-color:#b9d4ee;
+                   font-weight:600;font-size:13.5px;text-align:center;align-items:center;}
+  .stack .cell .who{color:var(--muted);font-size:12px;margin-top:3px;}
+  .stack .cell b{color:var(--accent);}
+
+  /* —— 图例 / 结论 —— */
+  .legend{display:flex;gap:18px;align-items:center;font-size:12px;color:var(--muted);}
+  .legend i{display:inline-block;width:22px;height:12px;margin-right:6px;vertical-align:-1px;
+            border:1px solid var(--line);}
+  .verdict{background:var(--note);border-left:4px solid var(--title);
+           padding:10px 14px;font-size:13.5px;line-height:1.55;}
+  .verdict b{color:var(--title);}
+  .verdict-bar{flex:1;height:100%;background:var(--title);color:#fff;font-size:16px;
+               display:flex;align-items:center;justify-content:center;padding:0 16px;text-align:center;}
+  .hud{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);
+       color:#6c7889;font-size:12px;letter-spacing:1px;font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="canvas" id="canvas">
+
+    <!-- ============ P1 · 方案 2：标题 / 总结带 / 左表 ｜ 右场景图 ============ -->
+    <section class="slide active" id="s1">
+      <h2 class="s-title">CubeSandbox 已落地 10 个具名客户：集中在代码执行隔离、多租户隔离与 RL 训练</h2>
+
+      <div class="band">
+        <div class="band-label">客户<br>与场景</div>
+        <div class="band-body">
+          <div>· <b>案例来源</b>：官方仓库 usecases 栏目 10 篇生产案例 + integrations 6 项生态集成</div>
+          <div>· <b>共同前提</b>：沙箱内运行的是模型生成、不可信的代码，需要独立内核级隔离</div>
+          <div>· <b>行业分布</b>：Agent 平台、金融投研、AI 训练、直播与企业中台、基础设施</div>
+        </div>
+      </div>
+
+      <div class="cols m2">
+        <div class="pane">
+          <div class="cap">客户列表（公开案例，按落地深度排序）</div>
+          <table class="t">
+            <colgroup><col style="width:118px"><col><col style="width:146px"></colgroup>
+            <thead><tr><th>客户 / 项目</th><th>使用场景</th><th>关键数字</th></tr></thead>
+            <tbody>
+              <tr><td>联想研究院</td><td>云端 Agent 的独立运行节点，可备份可回退</td><td class="no">启动 &gt;10s → &lt;100ms</td></tr>
+              <tr><td>弘则信息</td><td>金融投研 Agent 全循环，领域资源按版本分发</td><td class="no">API Key 不进沙箱</td></tr>
+              <tr><td>云知声</td><td>RL rollout 与 SWE Agent 数据合成</td><td class="no">80–100 实例/节点</td></tr>
+              <tr><td>广晟数科</td><td>两条产品线收敛为统一多租户沙箱平台</td><td class="no">热启动 180ms</td></tr>
+              <tr><td>花椒 / 花房</td><td>约 30 个企业 Agent 应用的代码执行</td><td class="no">8300 万 token / 日</td></tr>
+              <tr><td>WeKnora</td><td>会话级常驻沙箱 + 技能快照</td><td class="no">技能秒级就位</td></tr>
+              <tr><td>openFuyao 等</td><td>K8s 部署、浏览器运行时、常驻 Agent 平台</td><td class="no">eBPF 生产实践</td></tr>
+            </tbody>
+          </table>
+          <div class="cap" style="margin:2px 0 0">
+            生态集成：Claude Code · OpenCode · Pi Agent · LangChain · OpenAI Agents SDK · Ubuntu 桌面沙箱（noVNC GUI 自动化）
+          </div>
+        </div>
+
+        <div class="pane">
+          <div class="cap">五类使用场景与代表客户</div>
+          <div class="stack">
+            <div class="row"><div class="cell cat">① 代码执行隔离</div>
+              <div class="cell g">限制 Harness 可执行命令与出站访问
+                <span class="who">代表：trpc-agent-go · Claude Code · OpenCode · Pi Agent</span></div></div>
+            <div class="row"><div class="cell cat">② 多租户隔离</div>
+              <div class="cell g">用户之间物理隔离 + 状态跨沙箱持久化
+                <span class="who">代表：花椒 · 广晟数科 · 弘则信息 · WeKnora</span></div></div>
+            <div class="row"><div class="cell cat">③ RL 训练评测</div>
+              <div class="cell g">批量并行 episode，环境干净可复现
+                <span class="who">代表：云知声 · SWE Agent 数据合成</span></div></div>
+            <div class="row"><div class="cell cat">④ GUI 自动化</div>
+              <div class="cell g">浏览器与桌面运行时搬进沙箱
+                <span class="who">代表：Lexmount 浏览器 · Ubuntu 桌面 noVNC</span></div></div>
+            <div class="row"><div class="cell cat">⑤ 平台化底座</div>
+              <div class="cell g">K8s 部署编排，作为 AI 中台执行层
+                <span class="who">代表：openFuyao · Hermes · WeKnora</span></div></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--green)"></i>已有公开生产案例</span>
+            <span><i style="background:var(--orange)"></i>官方集成 / 规划中</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="src">数据来源：TencentCloud/CubeSandbox 官方 usecases 与 integrations 栏目（检索日期 2026-09-21）</div>
+      <div class="pg">1 / 2</div>
+    </section>
+
+    <!-- ============ P2 · 方案 3：标题 / 左右 / 页脚结论 ============ -->
+    <section class="slide" id="s2">
+      <h2 class="s-title">三类假设核对：安全限制与多租户隔离已有客户实证，Android 模拟尚缺公开案例</h2>
+
+      <div class="cols m3">
+        <div class="pane">
+          <div class="cap">假设 → 结论 → 依据</div>
+          <table class="t">
+            <colgroup><col style="width:132px"><col style="width:112px"><col></colgroup>
+            <thead><tr><th>假设</th><th>结论</th><th>依据</th></tr></thead>
+            <tbody>
+              <tr><td>限制 Harness 执行命令</td><td class="ok">✔ 成立<br>官方主线</td>
+                  <td>CubeVS 内核态 eBPF 做沙箱间网络隔离，CubeEgress 按域名 / 路径 / 方法限制出站并注入凭据，Key 对沙箱内代码不可见；trpc-agent-go 案例即"安全代码执行后端"</td></tr>
+              <tr><td>服务端多租户隔离</td><td class="ok">✔ 成立<br>有直接案例</td>
+                  <td>花椒原痛点是"用户 A 可经 Agent 操作到用户 B 的文件"；广晟数科用 owner_id + 租约 + fencing token 做多租户治理，准入上限 200 → 500</td></tr>
+              <tr><td>模拟 Android 手机</td><td style="color:#a8630b;font-weight:600">⚠ 缺公开案例<br>技术同源</td>
+                  <td>官方仅有 Ubuntu 桌面沙箱（noVNC GUI 自动化）集成；AOSP Cuttlefish 虚拟设备本身运行在 VM 中；本 PPT P6 的 Android-Cuttlefish 与 P16 的 Android 沙箱密度为内部数据，宜列为规划</td></tr>
+            </tbody>
+          </table>
+          <div class="verdict">
+            <b>对第 5 页的用法</b>：前两条可直接写成"安全防护 / 多租户隔离"的客户实证；
+            Android 模拟建议标为<b>内部规划</b>，并引用 P6 的 Android-Cuttlefish 与 P16 的 Android 沙箱密度数据。
+          </div>
+        </div>
+
+        <div class="pane">
+          <div class="cap">沙箱能力 → 支撑的场景</div>
+          <div class="stack">
+            <div class="row"><div class="cell cat">内核级隔离</div>
+              <div class="cell">独立 guest 内核 + KVM microVM
+                <span class="who">支撑：不可信代码执行、多租户物理隔离</span></div></div>
+            <div class="row"><div class="cell cat">网络隔离</div>
+              <div class="cell">CubeVS 基于 eBPF 的内核态转发
+                <span class="who">支撑：阻断沙箱之间互相访问</span></div></div>
+            <div class="row"><div class="cell cat">出站管控</div>
+              <div class="cell">CubeEgress 出口网关 + 凭证托管
+                <span class="who">支撑：域名 / 路径 / 方法策略，Key 不进沙箱</span></div></div>
+            <div class="row"><div class="cell cat">状态管理</div>
+              <div class="cell">快照、克隆、暂停与恢复
+                <span class="who">支撑：会话常驻、技能快照秒级就位</span></div></div>
+            <div class="row"><div class="cell cat">密度与启动</div>
+              <div class="cell">&lt;60ms 启动 · &lt;5MB 开销 · 单机数千实例
+                <span class="who">支撑：RL rollout 高并发、成本优化</span></div></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--blue)"></i>平台能力</span>
+            <span><i style="background:var(--green)"></i>已验证场景</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="verdict-bar">结论：客户买的是"不可信代码 + 多租户 + 私有化部署"；Android 场景待补公开案例</div>
+      </div>
+
+      <div class="src">数据来源：CubeSandbox 官方 README、usecases / integrations 栏目（检索日期 2026-09-21）</div>
+      <div class="pg">2 / 2</div>
+    </section>
+
+  </div>
+</div>
+<div class="hud" id="counter">1 / 2 · ← → 翻页 · F 全屏</div>
+<script>
+  // 固定 16:9 缩放：务必保留 (iw/ih) 的比较与 scale 计算
+  function fit(){
+    var c=document.getElementById('canvas');
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    c.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  var slides=document.querySelectorAll('.slide'), cur=0;
+  function go(n){
+    slides[cur].classList.remove('active');
+    cur=(n+slides.length)%slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent=(cur+1)+' / '+slides.length+' · ← → 翻页 · F 全屏';
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown') go(cur+1);
+    if(e.key==='ArrowLeft' ||e.key==='ArrowUp'  ||e.key==='PageUp')                go(cur-1);
+    if(e.key==='Home') go(0);
+    if(e.key==='End')  go(slides.length-1);
+    if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+</script>
+</body>
+</html>
