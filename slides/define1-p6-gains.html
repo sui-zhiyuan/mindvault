@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>优化点进展（define1 第 6 页 · 工作进展版）</title>
+<style>
+  :root{
+    /* —— 浅色汇报模板，换主题只改这一块 —— */
+    --bg:#ffffff; --fg:#1b1b1b; --muted:#6b6b6b;
+    --title:#b3121b;              /* 标题 / 结论条：深红 */
+    --line:#d8dde3;               /* 细分隔线 */
+    --head:#dce9f7;               /* 表头浅蓝 */
+    --card:#f5f7fa;               /* 中性底 */
+    --note:#fdf3c8;               /* 结论 / 建议卡：浅黄 */
+    --green:#c9e7c2; --orange:#fbd9b5; --blue:#cfe4f7;
+    --accent:#1f5fa8;             /* 强调数字 */
+    --track:#eef1f6;              /* 条形底槽 */
+    --serif:'Songti SC','SimSun',Georgia,serif;
+    --sans:'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+    /* 栅格常量：下方"页面栅格"一节与基础样式表都引用它们，勿删 */
+    --pad:27px; --col:598px; --gap:30px;
+  }
+  html,body{margin:0;height:100%;background:#05070c;font-family:var(--sans);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .canvas{width:1280px;height:720px;position:relative;transform-origin:center center;flex:0 0 auto;}
+  .slide{position:absolute;inset:0;background:var(--bg);color:var(--fg);
+         opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;}
+
+  /* —— 通用 —— */
+  .s-title{position:absolute;left:27px;top:14px;width:1090px;margin:0;
+           font-size:25px;font-weight:700;line-height:1.25;color:var(--title);}
+  .pane{overflow:hidden;}
+  .pane > .cap{font-size:12px;color:var(--muted);margin:0 0 5px;line-height:1.4;}
+  .pane > .cap b{color:var(--fg);}
+
+  /* —— 两栏（方案 3）—— */
+  .cols{position:absolute;left:27px;width:1226px;display:grid;
+        grid-template-columns:var(--col) var(--col);gap:var(--gap);}
+  .cols.m3{top:78px;height:538px;}
+
+  /* —— 进展概览条 —— */
+  .overview{position:absolute;left:27px;top:47px;width:1226px;height:23px;background:var(--head);
+            border:1px solid #b9d4ee;box-sizing:border-box;padding:0 10px;font-size:12.5px;line-height:21px;
+            color:#26415e;white-space:nowrap;overflow:hidden;}
+  .overview b{color:var(--title);}
+
+  /* —— 页脚带（方案 3）—— */
+  .foot{position:absolute;left:27px;top:634px;width:1226px;height:64px;display:flex;}
+  .verdict-bar{flex:1;height:100%;background:var(--title);color:#fff;font-size:16px;
+               display:flex;align-items:center;justify-content:center;padding:0 16px;text-align:center;}
+  .stampbox{width:250px;flex:0 0 250px;margin-left:14px;display:flex;flex-direction:column;
+            justify-content:center;align-items:flex-end;gap:3px;font-size:11px;color:var(--muted);
+            font-variant-numeric:tabular-nums;line-height:1.35;text-align:right;}
+
+  /* —— 章节导航 / 图例 —— */
+  .tabs{position:absolute;right:27px;top:12px;display:flex;font-size:12px;}
+  .tabs span{padding:3px 10px;border:1px solid var(--line);color:var(--muted);}
+  .tabs span.on{background:var(--title);color:#fff;border-color:var(--title);}
+  .legend{display:flex;gap:14px;align-items:center;font-size:11.5px;color:var(--muted);margin-top:5px;}
+  .legend i{display:inline-block;width:14px;height:12px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line);}
+
+  /* —— 表格（细线 + 浅蓝表头）—— */
+  table.t{width:100%;border-collapse:collapse;table-layout:fixed;
+          font-size:12px;line-height:1.4;font-variant-numeric:tabular-nums;}
+  table.t th{background:var(--head);border:1px solid var(--line);padding:4px 6px;text-align:left;font-weight:600;}
+  table.t td{border:1px solid var(--line);padding:4px 6px;vertical-align:top;}
+  table.t .num{text-align:right;white-space:nowrap;}
+  table.t b{font-weight:600;}
+  table.t .dim{color:var(--muted);font-size:11px;}
+  .bar{display:inline-block;height:8px;background:var(--blue);border:1px solid #b9d4ee;vertical-align:-1px;}
+  .bar.g{background:var(--green);border-color:#a8d39f;}
+
+  /* —— 状态标签 —— */
+  .chip{display:inline-block;font-size:10.5px;line-height:1.5;padding:0 5px;border:1px solid var(--line);
+        background:#f2f4f7;color:#4a5560;white-space:nowrap;}
+  .chip.ok{background:var(--green);border-color:#a8d39f;color:#2f5d2a;}
+  .chip.warn{background:var(--note);border-color:#e8d98a;color:#8a5a00;}
+  .chip.gray{background:#eef0f3;border-color:#d8dde3;color:#6b6b6b;}
+
+  /* —— 右侧信息块 —— */
+  .blocks{display:flex;flex-direction:column;gap:10px;height:100%;}
+  .card{border:1px solid var(--line);background:var(--card);padding:8px 11px;box-sizing:border-box;}
+  .card.plain{background:#fff;}
+  .card h4{margin:0 0 5px;font-size:13px;font-weight:700;color:var(--title);}
+  .card h4 em{font-style:normal;font-weight:400;font-size:10.5px;color:var(--muted);margin-left:6px;}
+  .card ul{margin:0;padding-left:14px;font-size:11.5px;line-height:1.45;}
+  .card li{margin-bottom:3px;}
+  .card li:last-child{margin-bottom:0;}
+  .card b{font-weight:600;}
+
+  .nav{position:fixed;left:14px;bottom:8px;font-size:12px;color:#8b93a1;font-family:var(--sans);}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="canvas" id="canvas">
+    <section class="slide active" id="s1">
+      <h2 class="s-title">进展：3 项 LLM 预处理优化已交付待验证，Pipeline B 已跑通、6 个缺口待补</h2>
+
+      <div class="tabs">
+        <span>组合概述</span><span class="on">项目进展</span><span>项目计划</span><span>决策申请</span>
+      </div>
+
+      <div class="overview">进展概览：可量化 <b>6 项</b> ＝ 已交付待验证 <b>3</b> · 规格已定 <b>1</b> · 待验证 <b>1</b> · 规格弃用 <b>1</b>　｜　功能需求 <b>2 项</b>待集成　｜　已置换 <b>3 项</b>（测试集收益不明显）　｜　设计侧不确定项 <b>8 / 10</b> 已闭环</div>
+
+      <div class="cols m3">
+        <!-- 左栏：优化点进展明细 -->
+        <div class="pane">
+          <p class="cap"><b>可量化优化点 · 6 项</b>　状态据任务书与设计文档整理；收益为任务书预期值（非实测）；相对＝相对该 pipeline，对推＝vs 9755，预估项按原表标注</p>
+          <table class="t">
+            <colgroup><col style="width:33%"><col style="width:18%"><col style="width:19%"><col style="width:30%"></colgroup>
+            <tr><th>优化点 / 改在哪一层</th><th>状态</th><th>收益</th><th>证据 · 交付</th></tr>
+            <tr>
+              <td><b>文本归一化融合</b><div class="dim">表达式层</div></td>
+              <td><span class="chip ok">已交付</span> <span class="chip warn">待验证</span></td>
+              <td>相对 <b>3.3%</b><div class="dim">自提升 28%</div></td>
+              <td>交付 AtomGit；Pipeline B 归一化已并入 7 步链路</td>
+            </tr>
+            <tr>
+              <td><b>MinHash 替换 SVE2</b><div class="dim">SVE2 内核</div></td>
+              <td><span class="chip ok">已交付</span> <span class="chip warn">待验证</span></td>
+              <td>相对 <b>5.0%</b>（预估）<div class="dim">自提升 35%</div></td>
+              <td>交付 AtomGit；阻塞：950 SVE 宽度待确认</td>
+            </tr>
+            <tr>
+              <td><b>LLVM path SVE256</b><div class="dim">编译期</div></td>
+              <td><span class="chip ok">已交付</span> <span class="chip warn">待验证</span></td>
+              <td>相对 <b>3.2%</b></td>
+              <td>交付 target Kunpeng 950 with SVE256</td>
+            </tr>
+            <tr>
+              <td><b>UDF 调度 / 链融合</b><div class="dim">逻辑 + 物理计划</div></td>
+              <td><span class="chip ok">规格已定</span></td>
+              <td>对推 <b>1.0%</b></td>
+              <td>融合三条件 + fuse_mappers 默认启用；并发度试探回退</td>
+            </tr>
+            <tr>
+              <td><b>Ray 调度优化</b><div class="dim">分布式执行</div></td>
+              <td><span class="chip warn">待验证</span></td>
+              <td>对推 <b>1.0%</b></td>
+              <td>⚠ Pipeline B 实测并行份额 ≈ 0（α≈1.0、N*=1）</td>
+            </tr>
+            <tr>
+              <td><b>SVE Gather 批量取数</b><div class="dim">take 内核</div></td>
+              <td><span class="chip gray">规格已弃用</span></td>
+              <td>对推 <b>0.5%</b></td>
+              <td>perf-design-spec 3.6 标 ⚠️弃用（置换候选）</td>
+            </tr>
+          </table>
+
+          <p class="cap" style="margin-top:9px;"><b>功能需求 · 2 项</b>　不参与性能统计</p>
+          <table class="t">
+            <colgroup><col style="width:33%"><col style="width:18%"><col style="width:49%"></colgroup>
+            <tr><th>功能点</th><th>状态</th><th>交付形态 · 证据</th></tr>
+            <tr>
+              <td><b>鲲鹏亲和多模态算子库适配</b><div class="dim">Daft 算子层</div></td>
+              <td><span class="chip gray">待集成</span></td>
+              <td>算子库以独立仓库交付；Daft 侧封装物理计划可调用接口，接口不可用时回退原实现</td>
+            </tr>
+            <tr>
+              <td><b>Lance 算子下推适配</b><div class="dim">数据源侧</div></td>
+              <td><span class="chip gray">待集成</span></td>
+              <td>Lance 侧视频解码 / 抽帧；Daft 侧适配下推，降低跨层搬运与中间物化</td>
+            </tr>
+          </table>
+
+          <p class="cap" style="margin-top:8px;"><b>置换 3 项</b>（收益不明显，由新增优化点置换）：自适应调度 · Offsets 快路径 · OpenEuler LLVM 后端</p>
+
+          <div class="legend">
+            <span><i style="background:var(--green);border-color:#a8d39f;"></i>已交付 / 规格已定</span>
+            <span><i style="background:var(--note);border-color:#e8d98a;"></i>待验证 / 有阻塞</span>
+            <span><i style="background:#eef0f3;"></i>待集成 / 已弃用</span>
+          </div>
+        </div>
+
+        <!-- 右栏：进展证据、设计侧进展、验收环境、里程碑 -->
+        <div class="blocks">
+          <div class="card">
+            <h4>Pipeline B 现状<em>候选版 · MinHash-LSH 去重</em></h4>
+            <ul>
+              <li><b>已跑通</b>：PR #2 / commit 02b65df（新增 3 文件 205 行）· 7 步原生算子 · <b>0 个 Python UDF</b>（explain 断言）· 产物 4 列 deduped parquet + 结果 JSON</li>
+              <li>Rust CPU 占比 <b>2.65%</b>（Pipeline A）→ <b>18.95%</b>（Pipeline B，≈7×）；原始文本产线 0.91%</li>
+              <li><b>6 个缺口</b>：单轮 min 传播≠连通分量 · 无法判断去重是否生效 · 哈希降级链 · 输入侧零校验 · 无删除清单 · 环境依赖不在仓库</li>
+              <li>待补：2 个 opt-in 分支未合并 · candidate_buckets 未实现 · task 未登记 formal_pipelines.json · <b>无吞吐 / 去重占比实测值</b></li>
+            </ul>
+          </div>
+
+          <div class="card plain">
+            <h4>设计侧进展<em>Daft-Builtin 性能优化</em></h4>
+            <ul>
+              <li>11 个优化点已归并五大类（UDF 跨边界 / Hash-CRC / SVE 向量化 / Text 快路径 / 视频）；<b>P0 = Hash-CRC + Text Offset</b>；集成顺序 CRC32C ＞ Offset 快路径 ＞ SVE 向量化 ＞ UDF 融合</li>
+              <li>不确定项 10 项：<b>8 已闭环</b> · 1 待确认（950 SVE 向量宽度）· 1 暂缓（CRC32C 分布均匀性）；规格弃用 4 处（Rust 重写清单 / 文本处理 / 视频处理 / Gather-Take）</li>
+            </ul>
+          </div>
+
+          <div class="card plain">
+            <h4>验证与验收环境<em>收益以双跑对比为准</em></h4>
+            <ul>
+              <li>平台：鲲鹏 950V200（性能目标）vs 9755（对标）；920B 兼容可执行、920 无 SVE</li>
+              <li>产线：volc_operator_sim 六条模态产线（FineWeb 文本 / 视频场景切分 / 图像策管 / ASR 音频 / PDF 解析 / nuScenes）；验收为优化前后吞吐与响应时间双跑对比</li>
+            </ul>
+          </div>
+
+          <div class="card plain">
+            <h4>里程碑与工作量<em>工作量已刷新</em></h4>
+            <ul>
+              <li>计划完成 2027/3/30 · 落地产品 2027/6/30 · 版本 BoostKit 27.0 / openEuler 27.0</li>
+              <li>工作量刷新：运行时 <b>84 → 43</b> 人月 · UDF 加速 <b>10 → 48</b> 人月（本项目承载 48 / 34＋周边 10）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="verdict-bar">下一步：补齐 Pipeline B 的连通分量与正确性校验，并按 P0→P3 顺序推进集成</div>
+        <div class="stampbox">
+          <div>数据来源：deck 第 6 页原表 · docs/rust-kunpeng/ 任务书与设计文档</div>
+          <div>Page 6</div>
+          <div>Huawei Confidential</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="nav"><span id="counter">1 / 1</span></div>
+<script>
+  // 固定 16:9 缩放：务必保留 (iw/ih) 的比较与 scale 计算
+  function fit(){
+    var c=document.getElementById('canvas');
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    c.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  var slides=document.querySelectorAll('.slide'), cur=0;
+  function go(n){
+    slides[cur].classList.remove('active');
+    cur=(n+slides.length)%slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown') go(cur+1);
+    if(e.key==='ArrowLeft' ||e.key==='ArrowUp'  ||e.key==='PageUp')                go(cur-1);
+    if(e.key==='Home') go(0);
+    if(e.key==='End')  go(slides.length-1);
+    if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+</script>
+</body>
+</html>
