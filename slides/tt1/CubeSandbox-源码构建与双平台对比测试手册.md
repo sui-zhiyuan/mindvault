@@ -74,7 +74,7 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 两台机器上运行的 CubeSandbox 版本、沙箱规格、测试方法必须一致，否则测出的是配置差异而不是平台差异。第 2 篇列出必须对齐和必须记录的项。
 
-`checking_points.xlsx` 是本次测试的输入表，用于登记两台机器各自的版本与环境关键信息；性能结果单独归档，两者的取值方式见 4.6。
+`checking_points.xlsx` 规定了本次测试必须满足的环境与版本。开始之前先从它读出目标规格，再按规格去准备机器；它一经确定不再被修改，整个测试过程中也不写入任何内容。性能结果单独归档，见 4.6。
 
 ## 1.3 术语表
 
@@ -94,7 +94,9 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 ---
 
-# 第 2 篇　公平性基线
+# 第 2 篇　公平性基线 
+
+本章供 AI Agent 阅读，人工操作直接跳转到 “第 3 篇”
 
 ## 2.1 为什么两台机器必须一致
 
@@ -140,15 +142,15 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 CubeSandbox 的 `.env` 中没有任何大页、NUMA 或 cpuset 变量，这些全部是宿主机层设置，通过内核 cmdline、`numactl`、`cpupower` 完成。
 
-## 2.4 必须记录的证据
+## 2.4 核对并归档机器证据
 
-两台机器在部署前各执行一次：
+两台机器在部署前各执行一次，用来核对本机是否满足 `checking_points.xlsx` 的规格，并把结果作为符合性证据归档：
 
 ```bash
 python3 collect_baseline.py --out baseline-$(uname -m).json
 ```
 
-收集 CPU 型号与 SKU、SMT 状态、NUMA 拓扑、内存与通道速率、页面大小与 THP、大页、内核与 cmdline、governor、漏洞缓解、KVM 与虚拟化能力、firmware/BIOS、磁盘与文件系统、Docker 版本与镜像 digest。字段说明见 5.3。
+输出包含 CPU 型号与 SKU、SMT 状态、NUMA 拓扑、内存与通道速率、页面大小与 THP、大页、内核与 cmdline、governor、漏洞缓解、KVM 与虚拟化能力、firmware/BIOS、磁盘与文件系统、Docker 版本与镜像 digest。逐项与规格比对，不一致的先解决（换机器或改配置）再进入第 3 篇。字段说明见 5.3。
 
 ## 2.5 无法对齐的架构差异
 
@@ -185,6 +187,25 @@ python3 collect_baseline.py --out baseline-$(uname -m).json
 
 ## 3.0 部署总览
 
+### 3.0.1 读取测试规格
+
+`checking_points.xlsx` 规定了这次测试必须满足的环境与版本。它是先决条件，不是记录表：先读它，再按它去找或配置机器，而不是先测完再把实际值写进去。它一经确定不再修改，整个测试过程中也不写入任何内容。
+
+其中各项分别决定后面的做法：
+
+| 规格项 | 决定 |
+|---|---|
+| 测试版本（commit / tag） | 3.1.4 拉取哪个版本 |
+| 机型、核数、内存容量与速率 | 用哪台机器；2.2 与 2.3 的 BIOS 与系统设置 |
+| 内核版本、大页配置、NUMA 配置、超线程 | 2.3 的宿主机设置 |
+| BIOS 项（NUMA / 频率策略 / C-state / 虚拟化） | 2.2 |
+| 容器操作系统、镜像版本 | 4.1 的模板镜像 |
+| 并发档位与沙箱规格 | 4.0 的测试参数 |
+
+开始之前先确认手上的机器符合这些规格。不符合时（例如内存速率不是规格要求的频率）换一台符合的机器，或按规格调整配置；不要用不符合规格的机器测完再把实际值记录下来。
+
+### 3.0.2 部署流程
+
 ```
 3.1 构建机准备 ──► 3.2 准备 guest 内核 ──► 3.3 源码构建发布包
                                                     │
@@ -203,11 +224,11 @@ python3 collect_baseline.py --out baseline-$(uname -m).json
 
 | 产出 | 由哪一步产生 | 被谁使用 |
 |---|---|---|
-| 基线证据 JSON | 2.4 | 结果报告 |
+| 基线证据 JSON | 2.4 | 证明本机符合规格；结果报告 |
 | `vmlinux` 及其 sha256 | 3.2 | 3.3 构建 |
-| `release-manifest.json`、`VERSION.txt` | 3.3 | 3.4 安装校验、4.6 登记 |
+| `release-manifest.json`、`VERSION.txt` | 3.3 | 3.4 安装校验、作为版本证据归档 |
 | 运行中的服务与端口 | 3.4 | 4.1～4.5 全部测试 |
-| 安装后指纹文件 | 3.5 | 4.6 登记、排查问题 |
+| 安装后指纹文件 | 3.5 | 作为安装证据归档、排查问题 |
 
 ## 3.1 构建机准备
 
@@ -290,7 +311,7 @@ docker images | grep -E 'ubuntu|tencentos|coredns|mysql|redis|openresty|compose'
 
 ### 3.1.4 获取源码
 
-从 GitHub 拉取 v0.7.1 的源码。
+从 GitHub 拉取 `checking_points.xlsx` 中「测试版本」规定的 commit 或 tag，下面以 v0.7.1 为例。
 
 ```bash
 git clone --depth 1 --branch v0.7.1 \
@@ -304,7 +325,7 @@ cd /path/to/CubeSandbox
 git describe --tags --abbrev=0 && git rev-parse HEAD && git status --porcelain
 ```
 
-第一行应输出 `v0.7.1`，第二行是 40 位 commit id，第三行应无任何输出（工作树干净）。若第三行有输出，说明工作树被改动过，需要确认改动来源后再继续。
+第一行应输出规格要求的 tag（示例中为 `v0.7.1`），第二行是 40 位 commit id，第三行应无任何输出（工作树干净）。拉下来的版本必须与规格一致；若不一致，改 `--branch` 重新拉取，而不是把实际拉到的版本记录下来。
 
 ## 3.2 准备 guest 内核
 
@@ -369,7 +390,7 @@ tar -tzf "$BUNDLE" | grep -E 'VERSION.txt|release-manifest.json|install.sh|env.e
 
 ### 3.3.3 归档构建元数据
 
-发布包里的 `VERSION.txt` 与 `release-manifest.json` 记录了本次构建的 commit、各组件版本与 digest、guest 镜像与内核的摘要，是两台机器核对「跑的是不是同一个东西」的依据，也是 4.6 填表的直接来源。
+发布包里的 `VERSION.txt` 与 `release-manifest.json` 记录了本次构建的 commit、各组件版本与 digest、guest 镜像与内核的摘要，是两台机器核对「跑的是不是同一个东西」的依据，也是结果报告需要附上的版本证据（见 4.6.2）。
 
 ```bash
 OUT=/tmp/cube-artifacts-$(uname -m); mkdir -p "$OUT"
@@ -669,37 +690,11 @@ awk 'NF>0 {print FILENAME, "columns:", NF}' /tmp/snapshot-$(uname -m).txt /tmp/r
 
 ## 4.6 结果记录与汇总
 
-`checking_points.xlsx` 是本次测试的输入表，用来登记两台机器各自是在什么版本与什么环境下测的；压测产出的性能数据不属于这张表，另存为独立文件。两者分开保存：前者说明数据的来源，后者是数据本身。
+测试结果只写到独立文件。`checking_points.xlsx` 是输入规格，整个测试过程中不写入任何内容。
 
-### 4.6.1 回填 `checking_points.xlsx`
+### 4.6.1 保存测试结果
 
-表中各项按下面的来源填写，两台机器各填一列。
-
-| 表格行 | 取值来源 |
-|---|---|
-| 测试版本（commit / tag） | `git describe` 与 `git rev-parse HEAD` |
-| CubeSandbox repo 版本 | `release-manifest.json` 的 `release_version` |
-| docker / docker-compose 版本 | `docker --version`、`docker-compose --version` |
-| 镜像版本 | `release-manifest.json` 各组件 version 与 digest；`docker images --digests` |
-| guest 镜像 / 内核 | `release-manifest.json` 的 `guest_image`、`kernel` |
-| 内核版本 / 大页 / NUMA / 核数 | `baseline-<arch>.json` 与 `postinstall-<arch>.json` |
-| OS 版本 | `/etc/os-release` 与 `uname -r` |
-
-其中机器环境项可以直接从归档的基线文件打印出来：
-
-```bash
-python3 -c "
-import json
-d=json.load(open('baseline-$(uname -m).json'))
-print(json.dumps(d['_fairness_highlights'], ensure_ascii=False, indent=2))
-"
-```
-
-输出包含该机器的架构、CPU 型号、逻辑核数、SMT 状态、NUMA 节点数、页大小与 governor，照此填入表中对应行。
-
-### 4.6.2 保存测试结果
-
-把 3 轮的压测结果汇总，写到独立的结果文件里，不写进输入表。
+把 3 轮的压测结果汇总，记录到结果文件里。
 
 ```bash
 OUT=/tmp/bench-summary-$(uname -m).txt
@@ -729,7 +724,31 @@ ls -l /tmp/bench-summary-*.txt && ls /tmp/bench-*/create-c100-r*.json | wc -l
 
 第一行应显示每台机器的汇总文件存在且非空，第二行应输出 6（两个架构目录各 3 个报告）。若不足 6，说明某一轮未产出报告，需要补跑。
 
-报告比值时必须附上第 2 篇的硬件与固件对照表。若轮间极差超过 20%，先排查环境稳定性。
+### 4.6.2 报告中需要附上的信息
+
+报告比值时必须附上第 2 篇的硬件与固件对照表，以及下面这些已归档的信息，用来说明这批数据是在什么版本与什么环境下得到的。它们全部取自归档文件，不需要写入输入表。
+
+| 信息 | 来源 |
+|---|---|
+| CubeSandbox commit / tag | `VERSION.txt` 的 `git_commit` 与 `release_version` |
+| 各组件版本与 digest | `release-manifest.json` 的 `components` |
+| guest 镜像与内核 | `release-manifest.json` 的 `guest_image`、`kernel` |
+| 内核版本 / 大页 / NUMA / 核数 / 内存速率 | `baseline-<arch>.json` 与 `postinstall-<arch>.json` |
+| docker / docker-compose 版本 | `docker --version`、`docker-compose --version` |
+| 镜像 digest | `docker images --digests` |
+| OS 版本 | `/etc/os-release` 与 `uname -r` |
+
+机器环境项可以直接从归档的基线文件打印出来：
+
+```bash
+python3 -c "
+import json
+d=json.load(open('baseline-$(uname -m).json'))
+print(json.dumps(d['_fairness_highlights'], ensure_ascii=False, indent=2))
+"
+```
+
+输出包含该机器的架构、CPU 型号、逻辑核数、SMT 状态、NUMA 节点数、页大小与 governor。若轮间极差超过 20%，先排查环境稳定性。
 
 ## 4.7 多轮执行的检查清单
 
@@ -804,4 +823,4 @@ systemctl is-enabled cube-sandbox-control.target; systemctl is-active cube-sandb
 
 收集内容：CPU 型号与 SKU、SMT 状态、NUMA 拓扑、内存与速率、页面大小与 THP、大页、内核与 cmdline、governor、漏洞缓解、KVM 与虚拟化能力、firmware/BIOS、磁盘与文件系统、Docker 版本与镜像 digest、已安装的 CubeSandbox 版本。
 
-脚本只读系统信息，不修改任何配置；缺少某个工具（如 `numactl`、`dmidecode`）时会在输出的 `_errors` 字段中记录，不影响其余字段采集。输出中的 `_fairness_highlights` 字段把最需要先比对的几项（架构、CPU 型号、SMT、NUMA 节点数、页大小、governor）单独抽出，便于两台机器并排核对。
+脚本只读系统信息，不修改任何配置；缺少某个工具（如 `numactl`、`dmidecode`）时会在输出的 `_errors` 字段中记录，不影响其余字段采集。输出中的 `_fairness_highlights` 字段把最需要先比对的几项（架构、CPU 型号、SMT、NUMA 节点数、页大小、governor）单独抽出，便于与 `checking_points.xlsx` 的规格逐项核对，也便于两台机器并排比对。
