@@ -1,0 +1,1238 @@
+{
+  "variant": "rayon1",
+  "platform": "aarch64",
+  "python": "3.12.14",
+  "versions": {
+    "transformers": "4.48.3",
+    "tokenizers": "0.21.4"
+  },
+  "env": {
+    "RAYON_NUM_THREADS": "1",
+    "TOKENIZERS_PARALLELISM": null
+  },
+  "executor_max_workers": 8,
+  "shape": {
+    "batch": 1,
+    "chars": [
+      58834
+    ],
+    "utf8_bytes": [
+      78960
+    ],
+    "token_lengths": [
+      25600
+    ]
+  },
+  "token_sha256": "171d9fb35a0780364f72037248d373efbfdb43037185145bca706d4fc8010749",
+  "tokenizer_files_sha256": {
+    "LICENSE": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e",
+    "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+    "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "tokenizer_config.json": "c91efca15ceff6e9ee9424db58a6f59cd41294e550a86cbd07e3c1fb500b34f9",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+  },
+  "summary": {
+    "queue_ms": {
+      "n": 90,
+      "p50_ms": 0.022510000000000002,
+      "p95_ms": 0.02353,
+      "min_ms": 0.02144,
+      "max_ms": 0.02395
+    },
+    "tokenizer_ms": {
+      "n": 90,
+      "p50_ms": 37.845200000000006,
+      "p95_ms": 38.93296,
+      "min_ms": 37.21123,
+      "max_ms": 39.23355
+    },
+    "total_ms": {
+      "n": 90,
+      "p50_ms": 38.0176,
+      "p95_ms": 39.10455,
+      "min_ms": 37.38261,
+      "max_ms": 39.40899
+    },
+    "executor_thread_cpu_ms": {
+      "n": 90,
+      "p50_ms": 37.84348,
+      "p95_ms": 38.93101,
+      "min_ms": 37.2095,
+      "max_ms": 39.23184
+    }
+  },
+  "rounds": [
+    {
+      "queue_ms": {
+        "n": 30,
+        "p50_ms": 0.022475000000000002,
+        "p95_ms": 0.02394,
+        "min_ms": 0.02148,
+        "max_ms": 0.02395
+      },
+      "tokenizer_ms": {
+        "n": 30,
+        "p50_ms": 37.728944999999996,
+        "p95_ms": 38.78074,
+        "min_ms": 37.28258,
+        "max_ms": 39.23355
+      },
+      "total_ms": {
+        "n": 30,
+        "p50_ms": 37.901920000000004,
+        "p95_ms": 38.9484,
+        "min_ms": 37.45074,
+        "max_ms": 39.40899
+      },
+      "executor_thread_cpu_ms": {
+        "n": 30,
+        "p50_ms": 37.726749999999996,
+        "p95_ms": 38.77915,
+        "min_ms": 37.2803,
+        "max_ms": 39.23184
+      }
+    },
+    {
+      "queue_ms": {
+        "n": 30,
+        "p50_ms": 0.022525,
+        "p95_ms": 0.0235,
+        "min_ms": 0.02144,
+        "max_ms": 0.02359
+      },
+      "tokenizer_ms": {
+        "n": 30,
+        "p50_ms": 38.05294,
+        "p95_ms": 39.11862,
+        "min_ms": 37.21123,
+        "max_ms": 39.17068
+      },
+      "total_ms": {
+        "n": 30,
+        "p50_ms": 38.22498,
+        "p95_ms": 39.29382,
+        "min_ms": 37.38261,
+        "max_ms": 39.34433
+      },
+      "executor_thread_cpu_ms": {
+        "n": 30,
+        "p50_ms": 38.05122,
+        "p95_ms": 39.11675,
+        "min_ms": 37.2095,
+        "max_ms": 39.16881
+      }
+    },
+    {
+      "queue_ms": {
+        "n": 30,
+        "p50_ms": 0.022574999999999998,
+        "p95_ms": 0.02353,
+        "min_ms": 0.02162,
+        "max_ms": 0.02362
+      },
+      "tokenizer_ms": {
+        "n": 30,
+        "p50_ms": 37.76829,
+        "p95_ms": 38.77614,
+        "min_ms": 37.31535,
+        "max_ms": 38.93296
+      },
+      "total_ms": {
+        "n": 30,
+        "p50_ms": 37.94124,
+        "p95_ms": 38.95072,
+        "min_ms": 37.48777,
+        "max_ms": 39.10455
+      },
+      "executor_thread_cpu_ms": {
+        "n": 30,
+        "p50_ms": 37.766375,
+        "p95_ms": 38.77455,
+        "min_ms": 37.31365,
+        "max_ms": 38.93101
+      }
+    }
+  ],
+  "rows": [
+    {
+      "round": 0,
+      "index": 0,
+      "warmup": true,
+      "queue_ms": 0.17983,
+      "tokenizer_ms": 37.53605,
+      "total_ms": 38.15997,
+      "executor_thread_cpu_ms": 37.532
+    },
+    {
+      "round": 0,
+      "index": 1,
+      "warmup": true,
+      "queue_ms": 0.03966,
+      "tokenizer_ms": 37.94401,
+      "total_ms": 38.16405,
+      "executor_thread_cpu_ms": 37.94156
+    },
+    {
+      "round": 0,
+      "index": 2,
+      "warmup": true,
+      "queue_ms": 0.02292,
+      "tokenizer_ms": 38.13787,
+      "total_ms": 38.32187,
+      "executor_thread_cpu_ms": 38.13561
+    },
+    {
+      "round": 0,
+      "index": 3,
+      "warmup": true,
+      "queue_ms": 0.02204,
+      "tokenizer_ms": 37.49348,
+      "total_ms": 37.66481,
+      "executor_thread_cpu_ms": 37.49124
+    },
+    {
+      "round": 0,
+      "index": 4,
+      "warmup": true,
+      "queue_ms": 0.02293,
+      "tokenizer_ms": 37.79302,
+      "total_ms": 37.97252,
+      "executor_thread_cpu_ms": 37.77594
+    },
+    {
+      "round": 0,
+      "index": 5,
+      "warmup": true,
+      "queue_ms": 0.02184,
+      "tokenizer_ms": 37.61528,
+      "total_ms": 37.78619,
+      "executor_thread_cpu_ms": 37.6134
+    },
+    {
+      "round": 0,
+      "index": 6,
+      "warmup": true,
+      "queue_ms": 0.02111,
+      "tokenizer_ms": 39.43062,
+      "total_ms": 39.60627,
+      "executor_thread_cpu_ms": 39.42852
+    },
+    {
+      "round": 0,
+      "index": 7,
+      "warmup": true,
+      "queue_ms": 0.02056,
+      "tokenizer_ms": 37.88515,
+      "total_ms": 38.05845,
+      "executor_thread_cpu_ms": 37.88283
+    },
+    {
+      "round": 0,
+      "index": 8,
+      "warmup": true,
+      "queue_ms": 0.02321,
+      "tokenizer_ms": 37.8392,
+      "total_ms": 38.01446,
+      "executor_thread_cpu_ms": 37.83634
+    },
+    {
+      "round": 0,
+      "index": 9,
+      "warmup": true,
+      "queue_ms": 0.02234,
+      "tokenizer_ms": 38.16021,
+      "total_ms": 38.33204,
+      "executor_thread_cpu_ms": 38.15843
+    },
+    {
+      "round": 0,
+      "index": 10,
+      "warmup": false,
+      "queue_ms": 0.02246,
+      "tokenizer_ms": 38.51944,
+      "total_ms": 38.69034,
+      "executor_thread_cpu_ms": 38.51721
+    },
+    {
+      "round": 0,
+      "index": 11,
+      "warmup": false,
+      "queue_ms": 0.02267,
+      "tokenizer_ms": 38.73843,
+      "total_ms": 38.91089,
+      "executor_thread_cpu_ms": 38.73654
+    },
+    {
+      "round": 0,
+      "index": 12,
+      "warmup": false,
+      "queue_ms": 0.02259,
+      "tokenizer_ms": 38.39926,
+      "total_ms": 38.57763,
+      "executor_thread_cpu_ms": 38.39743
+    },
+    {
+      "round": 0,
+      "index": 13,
+      "warmup": false,
+      "queue_ms": 0.02285,
+      "tokenizer_ms": 39.23355,
+      "total_ms": 39.40899,
+      "executor_thread_cpu_ms": 39.23184
+    },
+    {
+      "round": 0,
+      "index": 14,
+      "warmup": false,
+      "queue_ms": 0.02277,
+      "tokenizer_ms": 37.72904,
+      "total_ms": 37.90306,
+      "executor_thread_cpu_ms": 37.72762
+    },
+    {
+      "round": 0,
+      "index": 15,
+      "warmup": false,
+      "queue_ms": 0.02249,
+      "tokenizer_ms": 38.78074,
+      "total_ms": 38.9484,
+      "executor_thread_cpu_ms": 38.77915
+    },
+    {
+      "round": 0,
+      "index": 16,
+      "warmup": false,
+      "queue_ms": 0.02148,
+      "tokenizer_ms": 37.90876,
+      "total_ms": 38.07899,
+      "executor_thread_cpu_ms": 37.90673
+    },
+    {
+      "round": 0,
+      "index": 17,
+      "warmup": false,
+      "queue_ms": 0.02163,
+      "tokenizer_ms": 37.95728,
+      "total_ms": 38.12948,
+      "executor_thread_cpu_ms": 37.95562
+    },
+    {
+      "round": 0,
+      "index": 18,
+      "warmup": false,
+      "queue_ms": 0.0221,
+      "tokenizer_ms": 37.88237,
+      "total_ms": 38.05138,
+      "executor_thread_cpu_ms": 37.88063
+    },
+    {
+      "round": 0,
+      "index": 19,
+      "warmup": false,
+      "queue_ms": 0.02235,
+      "tokenizer_ms": 37.89677,
+      "total_ms": 38.06697,
+      "executor_thread_cpu_ms": 37.89495
+    },
+    {
+      "round": 0,
+      "index": 20,
+      "warmup": false,
+      "queue_ms": 0.02254,
+      "tokenizer_ms": 38.68651,
+      "total_ms": 38.85608,
+      "executor_thread_cpu_ms": 38.68498
+    },
+    {
+      "round": 0,
+      "index": 21,
+      "warmup": false,
+      "queue_ms": 0.02311,
+      "tokenizer_ms": 37.72885,
+      "total_ms": 37.90078,
+      "executor_thread_cpu_ms": 37.72588
+    },
+    {
+      "round": 0,
+      "index": 22,
+      "warmup": false,
+      "queue_ms": 0.02395,
+      "tokenizer_ms": 37.71303,
+      "total_ms": 37.8875,
+      "executor_thread_cpu_ms": 37.71141
+    },
+    {
+      "round": 0,
+      "index": 23,
+      "warmup": false,
+      "queue_ms": 0.02181,
+      "tokenizer_ms": 37.80727,
+      "total_ms": 37.97394,
+      "executor_thread_cpu_ms": 37.80559
+    },
+    {
+      "round": 0,
+      "index": 24,
+      "warmup": false,
+      "queue_ms": 0.02268,
+      "tokenizer_ms": 37.55724,
+      "total_ms": 37.72882,
+      "executor_thread_cpu_ms": 37.55577
+    },
+    {
+      "round": 0,
+      "index": 25,
+      "warmup": false,
+      "queue_ms": 0.02282,
+      "tokenizer_ms": 37.75877,
+      "total_ms": 37.92953,
+      "executor_thread_cpu_ms": 37.75718
+    },
+    {
+      "round": 0,
+      "index": 26,
+      "warmup": false,
+      "queue_ms": 0.02394,
+      "tokenizer_ms": 37.55804,
+      "total_ms": 37.73296,
+      "executor_thread_cpu_ms": 37.55589
+    },
+    {
+      "round": 0,
+      "index": 27,
+      "warmup": false,
+      "queue_ms": 0.02171,
+      "tokenizer_ms": 37.54471,
+      "total_ms": 37.7146,
+      "executor_thread_cpu_ms": 37.54289
+    },
+    {
+      "round": 0,
+      "index": 28,
+      "warmup": false,
+      "queue_ms": 0.02294,
+      "tokenizer_ms": 37.89696,
+      "total_ms": 38.07077,
+      "executor_thread_cpu_ms": 37.89405
+    },
+    {
+      "round": 0,
+      "index": 29,
+      "warmup": false,
+      "queue_ms": 0.0233,
+      "tokenizer_ms": 37.36777,
+      "total_ms": 37.54058,
+      "executor_thread_cpu_ms": 37.36581
+    },
+    {
+      "round": 0,
+      "index": 30,
+      "warmup": false,
+      "queue_ms": 0.02236,
+      "tokenizer_ms": 37.3521,
+      "total_ms": 37.52073,
+      "executor_thread_cpu_ms": 37.35007
+    },
+    {
+      "round": 0,
+      "index": 31,
+      "warmup": false,
+      "queue_ms": 0.02191,
+      "tokenizer_ms": 37.37773,
+      "total_ms": 37.54805,
+      "executor_thread_cpu_ms": 37.37581
+    },
+    {
+      "round": 0,
+      "index": 32,
+      "warmup": false,
+      "queue_ms": 0.02184,
+      "tokenizer_ms": 37.40292,
+      "total_ms": 37.57498,
+      "executor_thread_cpu_ms": 37.40123
+    },
+    {
+      "round": 0,
+      "index": 33,
+      "warmup": false,
+      "queue_ms": 0.02203,
+      "tokenizer_ms": 37.51018,
+      "total_ms": 37.68438,
+      "executor_thread_cpu_ms": 37.50816
+    },
+    {
+      "round": 0,
+      "index": 34,
+      "warmup": false,
+      "queue_ms": 0.02188,
+      "tokenizer_ms": 37.63725,
+      "total_ms": 37.80674,
+      "executor_thread_cpu_ms": 37.63566
+    },
+    {
+      "round": 0,
+      "index": 35,
+      "warmup": false,
+      "queue_ms": 0.02249,
+      "tokenizer_ms": 37.57801,
+      "total_ms": 37.74847,
+      "executor_thread_cpu_ms": 37.5762
+    },
+    {
+      "round": 0,
+      "index": 36,
+      "warmup": false,
+      "queue_ms": 0.02183,
+      "tokenizer_ms": 37.33545,
+      "total_ms": 37.50674,
+      "executor_thread_cpu_ms": 37.33371
+    },
+    {
+      "round": 0,
+      "index": 37,
+      "warmup": false,
+      "queue_ms": 0.02167,
+      "tokenizer_ms": 37.74262,
+      "total_ms": 37.91245,
+      "executor_thread_cpu_ms": 37.741
+    },
+    {
+      "round": 0,
+      "index": 38,
+      "warmup": false,
+      "queue_ms": 0.02218,
+      "tokenizer_ms": 37.28258,
+      "total_ms": 37.45074,
+      "executor_thread_cpu_ms": 37.2803
+    },
+    {
+      "round": 0,
+      "index": 39,
+      "warmup": false,
+      "queue_ms": 0.02299,
+      "tokenizer_ms": 37.41143,
+      "total_ms": 37.58056,
+      "executor_thread_cpu_ms": 37.40914
+    },
+    {
+      "round": 1,
+      "index": 0,
+      "warmup": true,
+      "queue_ms": 0.02168,
+      "tokenizer_ms": 37.27143,
+      "total_ms": 37.44173,
+      "executor_thread_cpu_ms": 37.26939
+    },
+    {
+      "round": 1,
+      "index": 1,
+      "warmup": true,
+      "queue_ms": 0.02168,
+      "tokenizer_ms": 37.46257,
+      "total_ms": 37.63441,
+      "executor_thread_cpu_ms": 37.46056
+    },
+    {
+      "round": 1,
+      "index": 2,
+      "warmup": true,
+      "queue_ms": 0.02241,
+      "tokenizer_ms": 37.30479,
+      "total_ms": 37.47561,
+      "executor_thread_cpu_ms": 37.3026
+    },
+    {
+      "round": 1,
+      "index": 3,
+      "warmup": true,
+      "queue_ms": 0.02464,
+      "tokenizer_ms": 37.73258,
+      "total_ms": 37.90899,
+      "executor_thread_cpu_ms": 37.73077
+    },
+    {
+      "round": 1,
+      "index": 4,
+      "warmup": true,
+      "queue_ms": 0.02365,
+      "tokenizer_ms": 37.59465,
+      "total_ms": 37.76589,
+      "executor_thread_cpu_ms": 37.5927
+    },
+    {
+      "round": 1,
+      "index": 5,
+      "warmup": true,
+      "queue_ms": 0.02211,
+      "tokenizer_ms": 37.88654,
+      "total_ms": 38.05701,
+      "executor_thread_cpu_ms": 37.86268
+    },
+    {
+      "round": 1,
+      "index": 6,
+      "warmup": true,
+      "queue_ms": 0.02263,
+      "tokenizer_ms": 37.58245,
+      "total_ms": 37.75554,
+      "executor_thread_cpu_ms": 37.58064
+    },
+    {
+      "round": 1,
+      "index": 7,
+      "warmup": true,
+      "queue_ms": 0.02186,
+      "tokenizer_ms": 37.68974,
+      "total_ms": 37.86516,
+      "executor_thread_cpu_ms": 37.68792
+    },
+    {
+      "round": 1,
+      "index": 8,
+      "warmup": true,
+      "queue_ms": 0.02322,
+      "tokenizer_ms": 37.76435,
+      "total_ms": 37.93738,
+      "executor_thread_cpu_ms": 37.76271
+    },
+    {
+      "round": 1,
+      "index": 9,
+      "warmup": true,
+      "queue_ms": 0.02248,
+      "tokenizer_ms": 38.4425,
+      "total_ms": 38.6383,
+      "executor_thread_cpu_ms": 38.44046
+    },
+    {
+      "round": 1,
+      "index": 10,
+      "warmup": false,
+      "queue_ms": 0.02199,
+      "tokenizer_ms": 37.56508,
+      "total_ms": 37.73394,
+      "executor_thread_cpu_ms": 37.56333
+    },
+    {
+      "round": 1,
+      "index": 11,
+      "warmup": false,
+      "queue_ms": 0.02282,
+      "tokenizer_ms": 37.54686,
+      "total_ms": 37.71652,
+      "executor_thread_cpu_ms": 37.54518
+    },
+    {
+      "round": 1,
+      "index": 12,
+      "warmup": false,
+      "queue_ms": 0.02218,
+      "tokenizer_ms": 37.68463,
+      "total_ms": 37.85833,
+      "executor_thread_cpu_ms": 37.68235
+    },
+    {
+      "round": 1,
+      "index": 13,
+      "warmup": false,
+      "queue_ms": 0.02264,
+      "tokenizer_ms": 37.37508,
+      "total_ms": 37.55243,
+      "executor_thread_cpu_ms": 37.37322
+    },
+    {
+      "round": 1,
+      "index": 14,
+      "warmup": false,
+      "queue_ms": 0.02266,
+      "tokenizer_ms": 38.73083,
+      "total_ms": 38.90429,
+      "executor_thread_cpu_ms": 38.72924
+    },
+    {
+      "round": 1,
+      "index": 15,
+      "warmup": false,
+      "queue_ms": 0.02266,
+      "tokenizer_ms": 37.32124,
+      "total_ms": 37.495,
+      "executor_thread_cpu_ms": 37.31919
+    },
+    {
+      "round": 1,
+      "index": 16,
+      "warmup": false,
+      "queue_ms": 0.02359,
+      "tokenizer_ms": 38.31991,
+      "total_ms": 38.49745,
+      "executor_thread_cpu_ms": 38.31764
+    },
+    {
+      "round": 1,
+      "index": 17,
+      "warmup": false,
+      "queue_ms": 0.02295,
+      "tokenizer_ms": 38.51744,
+      "total_ms": 38.69701,
+      "executor_thread_cpu_ms": 38.51538
+    },
+    {
+      "round": 1,
+      "index": 18,
+      "warmup": false,
+      "queue_ms": 0.02266,
+      "tokenizer_ms": 37.37852,
+      "total_ms": 37.55682,
+      "executor_thread_cpu_ms": 37.37055
+    },
+    {
+      "round": 1,
+      "index": 19,
+      "warmup": false,
+      "queue_ms": 0.02257,
+      "tokenizer_ms": 37.67744,
+      "total_ms": 37.85082,
+      "executor_thread_cpu_ms": 37.67551
+    },
+    {
+      "round": 1,
+      "index": 20,
+      "warmup": false,
+      "queue_ms": 0.02248,
+      "tokenizer_ms": 37.21123,
+      "total_ms": 37.38261,
+      "executor_thread_cpu_ms": 37.2095
+    },
+    {
+      "round": 1,
+      "index": 21,
+      "warmup": false,
+      "queue_ms": 0.02308,
+      "tokenizer_ms": 38.18314,
+      "total_ms": 38.35989,
+      "executor_thread_cpu_ms": 38.1811
+    },
+    {
+      "round": 1,
+      "index": 22,
+      "warmup": false,
+      "queue_ms": 0.0232,
+      "tokenizer_ms": 38.40616,
+      "total_ms": 38.5839,
+      "executor_thread_cpu_ms": 38.40446
+    },
+    {
+      "round": 1,
+      "index": 23,
+      "warmup": false,
+      "queue_ms": 0.02326,
+      "tokenizer_ms": 37.53087,
+      "total_ms": 37.70964,
+      "executor_thread_cpu_ms": 37.52816
+    },
+    {
+      "round": 1,
+      "index": 24,
+      "warmup": false,
+      "queue_ms": 0.0235,
+      "tokenizer_ms": 37.86159,
+      "total_ms": 38.03951,
+      "executor_thread_cpu_ms": 37.85959
+    },
+    {
+      "round": 1,
+      "index": 25,
+      "warmup": false,
+      "queue_ms": 0.02221,
+      "tokenizer_ms": 37.99201,
+      "total_ms": 38.17172,
+      "executor_thread_cpu_ms": 37.99016
+    },
+    {
+      "round": 1,
+      "index": 26,
+      "warmup": false,
+      "queue_ms": 0.0222,
+      "tokenizer_ms": 37.88251,
+      "total_ms": 38.05355,
+      "executor_thread_cpu_ms": 37.88071
+    },
+    {
+      "round": 1,
+      "index": 27,
+      "warmup": false,
+      "queue_ms": 0.02303,
+      "tokenizer_ms": 38.86151,
+      "total_ms": 39.03407,
+      "executor_thread_cpu_ms": 38.84103
+    },
+    {
+      "round": 1,
+      "index": 28,
+      "warmup": false,
+      "queue_ms": 0.02144,
+      "tokenizer_ms": 38.02054,
+      "total_ms": 38.19066,
+      "executor_thread_cpu_ms": 38.01859
+    },
+    {
+      "round": 1,
+      "index": 29,
+      "warmup": false,
+      "queue_ms": 0.02194,
+      "tokenizer_ms": 39.17068,
+      "total_ms": 39.34433,
+      "executor_thread_cpu_ms": 39.16881
+    },
+    {
+      "round": 1,
+      "index": 30,
+      "warmup": false,
+      "queue_ms": 0.02285,
+      "tokenizer_ms": 37.9644,
+      "total_ms": 38.14087,
+      "executor_thread_cpu_ms": 37.96262
+    },
+    {
+      "round": 1,
+      "index": 31,
+      "warmup": false,
+      "queue_ms": 0.0216,
+      "tokenizer_ms": 37.90573,
+      "total_ms": 38.08015,
+      "executor_thread_cpu_ms": 37.90391
+    },
+    {
+      "round": 1,
+      "index": 32,
+      "warmup": false,
+      "queue_ms": 0.02214,
+      "tokenizer_ms": 38.531,
+      "total_ms": 38.70327,
+      "executor_thread_cpu_ms": 38.52918
+    },
+    {
+      "round": 1,
+      "index": 33,
+      "warmup": false,
+      "queue_ms": 0.02219,
+      "tokenizer_ms": 38.08534,
+      "total_ms": 38.2593,
+      "executor_thread_cpu_ms": 38.08385
+    },
+    {
+      "round": 1,
+      "index": 34,
+      "warmup": false,
+      "queue_ms": 0.02205,
+      "tokenizer_ms": 38.1435,
+      "total_ms": 38.31274,
+      "executor_thread_cpu_ms": 38.14168
+    },
+    {
+      "round": 1,
+      "index": 35,
+      "warmup": false,
+      "queue_ms": 0.02149,
+      "tokenizer_ms": 38.97235,
+      "total_ms": 39.14029,
+      "executor_thread_cpu_ms": 38.97048
+    },
+    {
+      "round": 1,
+      "index": 36,
+      "warmup": false,
+      "queue_ms": 0.0217,
+      "tokenizer_ms": 38.1319,
+      "total_ms": 38.30252,
+      "executor_thread_cpu_ms": 38.13006
+    },
+    {
+      "round": 1,
+      "index": 37,
+      "warmup": false,
+      "queue_ms": 0.02242,
+      "tokenizer_ms": 39.11862,
+      "total_ms": 39.29382,
+      "executor_thread_cpu_ms": 39.11675
+    },
+    {
+      "round": 1,
+      "index": 38,
+      "warmup": false,
+      "queue_ms": 0.02298,
+      "tokenizer_ms": 38.10313,
+      "total_ms": 38.2766,
+      "executor_thread_cpu_ms": 38.10119
+    },
+    {
+      "round": 1,
+      "index": 39,
+      "warmup": false,
+      "queue_ms": 0.02232,
+      "tokenizer_ms": 38.1476,
+      "total_ms": 38.32303,
+      "executor_thread_cpu_ms": 38.14569
+    },
+    {
+      "round": 2,
+      "index": 0,
+      "warmup": true,
+      "queue_ms": 0.02228,
+      "tokenizer_ms": 38.38169,
+      "total_ms": 38.55537,
+      "executor_thread_cpu_ms": 38.37965
+    },
+    {
+      "round": 2,
+      "index": 1,
+      "warmup": true,
+      "queue_ms": 0.02219,
+      "tokenizer_ms": 38.32003,
+      "total_ms": 38.49475,
+      "executor_thread_cpu_ms": 38.3184
+    },
+    {
+      "round": 2,
+      "index": 2,
+      "warmup": true,
+      "queue_ms": 0.0221,
+      "tokenizer_ms": 38.21189,
+      "total_ms": 38.38281,
+      "executor_thread_cpu_ms": 38.21025
+    },
+    {
+      "round": 2,
+      "index": 3,
+      "warmup": true,
+      "queue_ms": 0.02262,
+      "tokenizer_ms": 37.78562,
+      "total_ms": 37.96309,
+      "executor_thread_cpu_ms": 37.7832
+    },
+    {
+      "round": 2,
+      "index": 4,
+      "warmup": true,
+      "queue_ms": 0.02269,
+      "tokenizer_ms": 39.10147,
+      "total_ms": 39.27603,
+      "executor_thread_cpu_ms": 39.09925
+    },
+    {
+      "round": 2,
+      "index": 5,
+      "warmup": true,
+      "queue_ms": 0.02208,
+      "tokenizer_ms": 38.80539,
+      "total_ms": 38.97947,
+      "executor_thread_cpu_ms": 38.80347
+    },
+    {
+      "round": 2,
+      "index": 6,
+      "warmup": true,
+      "queue_ms": 0.02256,
+      "tokenizer_ms": 37.96407,
+      "total_ms": 38.13966,
+      "executor_thread_cpu_ms": 37.96197
+    },
+    {
+      "round": 2,
+      "index": 7,
+      "warmup": true,
+      "queue_ms": 0.0228,
+      "tokenizer_ms": 37.78146,
+      "total_ms": 37.95603,
+      "executor_thread_cpu_ms": 37.76568
+    },
+    {
+      "round": 2,
+      "index": 8,
+      "warmup": true,
+      "queue_ms": 0.02245,
+      "tokenizer_ms": 38.07665,
+      "total_ms": 38.25386,
+      "executor_thread_cpu_ms": 38.07493
+    },
+    {
+      "round": 2,
+      "index": 9,
+      "warmup": true,
+      "queue_ms": 0.02276,
+      "tokenizer_ms": 38.03523,
+      "total_ms": 38.21067,
+      "executor_thread_cpu_ms": 38.03391
+    },
+    {
+      "round": 2,
+      "index": 10,
+      "warmup": false,
+      "queue_ms": 0.0224,
+      "tokenizer_ms": 37.93203,
+      "total_ms": 38.10888,
+      "executor_thread_cpu_ms": 37.93038
+    },
+    {
+      "round": 2,
+      "index": 11,
+      "warmup": false,
+      "queue_ms": 0.02264,
+      "tokenizer_ms": 38.68086,
+      "total_ms": 38.85419,
+      "executor_thread_cpu_ms": 38.67894
+    },
+    {
+      "round": 2,
+      "index": 12,
+      "warmup": false,
+      "queue_ms": 0.02362,
+      "tokenizer_ms": 38.11277,
+      "total_ms": 38.28807,
+      "executor_thread_cpu_ms": 38.11115
+    },
+    {
+      "round": 2,
+      "index": 13,
+      "warmup": false,
+      "queue_ms": 0.02353,
+      "tokenizer_ms": 38.00241,
+      "total_ms": 38.17789,
+      "executor_thread_cpu_ms": 38.00047
+    },
+    {
+      "round": 2,
+      "index": 14,
+      "warmup": false,
+      "queue_ms": 0.02274,
+      "tokenizer_ms": 37.88228,
+      "total_ms": 38.05834,
+      "executor_thread_cpu_ms": 37.88042
+    },
+    {
+      "round": 2,
+      "index": 15,
+      "warmup": false,
+      "queue_ms": 0.02267,
+      "tokenizer_ms": 37.98883,
+      "total_ms": 38.16285,
+      "executor_thread_cpu_ms": 37.98709
+    },
+    {
+      "round": 2,
+      "index": 16,
+      "warmup": false,
+      "queue_ms": 0.02343,
+      "tokenizer_ms": 38.77614,
+      "total_ms": 38.95072,
+      "executor_thread_cpu_ms": 38.77455
+    },
+    {
+      "round": 2,
+      "index": 17,
+      "warmup": false,
+      "queue_ms": 0.0217,
+      "tokenizer_ms": 37.83912,
+      "total_ms": 38.01172,
+      "executor_thread_cpu_ms": 37.83725
+    },
+    {
+      "round": 2,
+      "index": 18,
+      "warmup": false,
+      "queue_ms": 0.02267,
+      "tokenizer_ms": 38.60223,
+      "total_ms": 38.77562,
+      "executor_thread_cpu_ms": 38.60039
+    },
+    {
+      "round": 2,
+      "index": 19,
+      "warmup": false,
+      "queue_ms": 0.02222,
+      "tokenizer_ms": 37.59199,
+      "total_ms": 37.76368,
+      "executor_thread_cpu_ms": 37.58994
+    },
+    {
+      "round": 2,
+      "index": 20,
+      "warmup": false,
+      "queue_ms": 0.02247,
+      "tokenizer_ms": 37.78613,
+      "total_ms": 37.95844,
+      "executor_thread_cpu_ms": 37.7839
+    },
+    {
+      "round": 2,
+      "index": 21,
+      "warmup": false,
+      "queue_ms": 0.02249,
+      "tokenizer_ms": 37.31535,
+      "total_ms": 37.48777,
+      "executor_thread_cpu_ms": 37.31365
+    },
+    {
+      "round": 2,
+      "index": 22,
+      "warmup": false,
+      "queue_ms": 0.02218,
+      "tokenizer_ms": 37.34804,
+      "total_ms": 37.52063,
+      "executor_thread_cpu_ms": 37.34603
+    },
+    {
+      "round": 2,
+      "index": 23,
+      "warmup": false,
+      "queue_ms": 0.02337,
+      "tokenizer_ms": 37.66261,
+      "total_ms": 37.84043,
+      "executor_thread_cpu_ms": 37.66049
+    },
+    {
+      "round": 2,
+      "index": 24,
+      "warmup": false,
+      "queue_ms": 0.02253,
+      "tokenizer_ms": 37.50416,
+      "total_ms": 37.67571,
+      "executor_thread_cpu_ms": 37.50235
+    },
+    {
+      "round": 2,
+      "index": 25,
+      "warmup": false,
+      "queue_ms": 0.02315,
+      "tokenizer_ms": 37.72548,
+      "total_ms": 37.89834,
+      "executor_thread_cpu_ms": 37.72385
+    },
+    {
+      "round": 2,
+      "index": 26,
+      "warmup": false,
+      "queue_ms": 0.02199,
+      "tokenizer_ms": 37.61962,
+      "total_ms": 37.79399,
+      "executor_thread_cpu_ms": 37.61812
+    },
+    {
+      "round": 2,
+      "index": 27,
+      "warmup": false,
+      "queue_ms": 0.02295,
+      "tokenizer_ms": 38.39662,
+      "total_ms": 38.57167,
+      "executor_thread_cpu_ms": 38.39472
+    },
+    {
+      "round": 2,
+      "index": 28,
+      "warmup": false,
+      "queue_ms": 0.02255,
+      "tokenizer_ms": 37.64327,
+      "total_ms": 37.81585,
+      "executor_thread_cpu_ms": 37.62142
+    },
+    {
+      "round": 2,
+      "index": 29,
+      "warmup": false,
+      "queue_ms": 0.0226,
+      "tokenizer_ms": 37.98404,
+      "total_ms": 38.15542,
+      "executor_thread_cpu_ms": 37.98223
+    },
+    {
+      "round": 2,
+      "index": 30,
+      "warmup": false,
+      "queue_ms": 0.0221,
+      "tokenizer_ms": 37.85128,
+      "total_ms": 38.02348,
+      "executor_thread_cpu_ms": 37.84971
+    },
+    {
+      "round": 2,
+      "index": 31,
+      "warmup": false,
+      "queue_ms": 0.02261,
+      "tokenizer_ms": 37.75045,
+      "total_ms": 37.92404,
+      "executor_thread_cpu_ms": 37.74885
+    },
+    {
+      "round": 2,
+      "index": 32,
+      "warmup": false,
+      "queue_ms": 0.02189,
+      "tokenizer_ms": 37.91343,
+      "total_ms": 38.08275,
+      "executor_thread_cpu_ms": 37.91182
+    },
+    {
+      "round": 2,
+      "index": 33,
+      "warmup": false,
+      "queue_ms": 0.02333,
+      "tokenizer_ms": 37.65926,
+      "total_ms": 37.83106,
+      "executor_thread_cpu_ms": 37.65766
+    },
+    {
+      "round": 2,
+      "index": 34,
+      "warmup": false,
+      "queue_ms": 0.02214,
+      "tokenizer_ms": 37.5559,
+      "total_ms": 37.7296,
+      "executor_thread_cpu_ms": 37.55394
+    },
+    {
+      "round": 2,
+      "index": 35,
+      "warmup": false,
+      "queue_ms": 0.02273,
+      "tokenizer_ms": 37.45873,
+      "total_ms": 37.63232,
+      "executor_thread_cpu_ms": 37.45681
+    },
+    {
+      "round": 2,
+      "index": 36,
+      "warmup": false,
+      "queue_ms": 0.02225,
+      "tokenizer_ms": 37.36449,
+      "total_ms": 37.53593,
+      "executor_thread_cpu_ms": 37.36278
+    },
+    {
+      "round": 2,
+      "index": 37,
+      "warmup": false,
+      "queue_ms": 0.02245,
+      "tokenizer_ms": 37.50843,
+      "total_ms": 37.68415,
+      "executor_thread_cpu_ms": 37.50675
+    },
+    {
+      "round": 2,
+      "index": 38,
+      "warmup": false,
+      "queue_ms": 0.02162,
+      "tokenizer_ms": 38.93296,
+      "total_ms": 39.10455,
+      "executor_thread_cpu_ms": 38.93101
+    },
+    {
+      "round": 2,
+      "index": 39,
+      "warmup": false,
+      "queue_ms": 0.0228,
+      "tokenizer_ms": 37.34838,
+      "total_ms": 37.52464,
+      "executor_thread_cpu_ms": 37.34638
+    }
+  ]
+}

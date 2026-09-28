@@ -1,0 +1,159 @@
+{
+  "variants": [
+    "neon8",
+    "neon8-repeat"
+  ],
+  "rounds": 3,
+  "aa": true,
+  "cpu_set": [
+    240,
+    242,
+    244,
+    246,
+    248,
+    250,
+    252,
+    254
+  ],
+  "numa": 3,
+  "runs": [
+    {
+      "block": 0,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/00-neon8"
+      ],
+      "elapsed": 20.36118769645691
+    },
+    {
+      "block": 0,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/00-neon8-repeat"
+      ],
+      "elapsed": 20.21934485435486
+    },
+    {
+      "block": 1,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/01-neon8"
+      ],
+      "elapsed": 20.477781057357788
+    },
+    {
+      "block": 1,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/01-neon8-repeat"
+      ],
+      "elapsed": 20.280193328857422
+    },
+    {
+      "block": 2,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/02-neon8"
+      ],
+      "elapsed": 20.38621973991394
+    },
+    {
+      "block": 2,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/root/hashbrown-sve-20260924/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/root/hashbrown-wide-20260924/venv-neon8/bin/python",
+        "/root/hashbrown-sve-20260924/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/root/hashbrown-wide-20260924/results/e2e-aa/02-neon8-repeat"
+      ],
+      "elapsed": 20.288267135620117
+    }
+  ]
+}

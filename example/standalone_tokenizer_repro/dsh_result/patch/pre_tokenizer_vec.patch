@@ -1,0 +1,61 @@
+--- /home/suine/projects/tokenizers/tokenizers/src/tokenizer/pre_tokenizer.rs	2026-09-24 14:23:27.200335297 +0800
++++ /tmp/tokenizers-opt/tokenizers/src/tokenizer/pre_tokenizer.rs	2026-09-28 08:57:18.123999728 +0800
+@@ -265,38 +265,34 @@
+ }
+ 
+ struct BytesToCharOffsetConverter {
+-    map: HashMap<usize, usize>,
++    /// For every byte of the original string, the index of the char containing it.
++    map: Vec<u32>,
+ }
+ 
+ impl BytesToCharOffsetConverter {
+     pub fn new(sequence: &str) -> Self {
+-        Self {
+-            map: sequence
+-                .char_indices()
+-                .enumerate()
+-                .flat_map(|(i, (b, c))| {
+-                    let mut n = 0;
+-                    std::iter::repeat_with(move || {
+-                        let o = (b + n, i);
+-                        n += 1;
+-                        o
+-                    })
+-                    .take(c.len_utf8())
+-                })
+-                .collect(),
++        let mut map = vec![0u32; sequence.len()];
++        for (i, (b, c)) in sequence.char_indices().enumerate() {
++            for n in 0..c.len_utf8() {
++                map[b + n] = i as u32;
++            }
+         }
++        Self { map }
+     }
+ 
+     pub fn convert(&self, offsets: Offsets) -> Option<Offsets> {
+-        match (self.map.get(&offsets.0), self.map.get(&offsets.1)) {
+-            (Some(start), Some(end)) => Some((*start, *end)),
+-            // If we reached the end, `end` is not in the map
+-            (Some(start), None) => {
+-                // But the one just before should be
+-                let last = self.map.get(&(offsets.1 - 1)).copied().unwrap_or(start + 1);
+-                Some((*start, last + 1))
+-            }
+-            _ => None,
++        let len = self.map.len();
++        if offsets.0 >= len {
++            return None;
+         }
++        let start = self.map[offsets.0] as usize;
++        let end = match self.map.get(offsets.1) {
++            Some(&end) => end as usize,
++            None => match self.map.get(offsets.1.wrapping_sub(1)) {
++                Some(&last) => last as usize + 1,
++                None => start + 1,
++            },
++        };
++        Some((start, end))
+     }
+ }

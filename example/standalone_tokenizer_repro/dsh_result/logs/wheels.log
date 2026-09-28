@@ -1,0 +1,1351 @@
+===== WHEEL neon8 =====
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /home/wheel/hb/shared/venv-build/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+📡 Using build options features, bindings from pyproject.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling target-lexicon v0.13.5
+   Compiling once_cell v1.21.4
+   Compiling autocfg v1.5.1
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling memchr v2.8.3
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cc v1.4.7
+   Compiling ident_case v1.0.1
+   Compiling fnv v1.0.7
+   Compiling strsim v0.11.1
+   Compiling getrandom v0.3.4
+   Compiling serde v1.0.229
+   Compiling cfg-if v1.0.5
+   Compiling zerocopy v0.8.57
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling regex-syntax v0.8.11
+   Compiling rustversion v1.0.23
+   Compiling pyo3-build-config v0.25.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling rayon-core v1.13.0
+   Compiling pkg-config v0.3.34
+   Compiling memoffset v0.9.1
+   Compiling matrixmultiply v0.3.11
+   Compiling portable-atomic v1.15.0
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling onig_sys v69.9.3
+   Compiling either v1.18.0
+   Compiling version_check v0.9.5
+   Compiling esaxx-rs v0.1.10
+   Compiling ahash v0.8.12
+   Compiling rand_core v0.9.5
+   Compiling unicode-width v0.2.2
+   Compiling regex-automata v0.4.18
+   Compiling serde_json v1.0.151
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling rawpointer v0.2.1
+   Compiling utf8parse v0.2.2
+   Compiling minimal-lexical v0.2.1
+   Compiling itoa v1.0.18
+   Compiling paste v1.0.15
+   Compiling thiserror v2.0.21
+   Compiling log v0.4.34
+   Compiling nom v7.1.3
+   Compiling anstyle-parse v1.0.0
+   Compiling rayon v1.12.0
+   Compiling castaway v0.2.4
+   Compiling numpy v0.25.0
+   Compiling serde_derive v1.0.229
+   Compiling darling_core v0.20.11
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling thiserror-impl v2.0.21
+   Compiling regex v1.13.1
+   Compiling monostate-impl v0.1.18
+   Compiling console v0.15.11
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling darling_macro v0.20.11
+   Compiling itertools v0.14.0
+   Compiling base64 v0.13.1
+   Compiling jiff-core v0.1.1
+   Compiling anstyle v1.0.14
+   Compiling indoc v2.0.7
+   Compiling darling v0.20.11
+   Compiling derive_builder_core v0.20.2
+   Compiling bitflags v2.13.2
+   Compiling macro_rules_attribute-proc_macro v0.2.3
+   Compiling ryu v1.0.23
+   Compiling anstyle-query v1.1.5
+   Compiling static_assertions v1.1.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling colorchoice v1.0.5
+   Compiling unindent v0.2.4
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling pastey v0.2.3
+   Compiling smallvec v1.16.1
+   Compiling number_prefix v0.4.0
+   Compiling indicatif v0.17.11
+   Compiling anstream v1.0.0
+   Compiling spm_precompiled v0.1.4
+   Compiling derive_builder_macro v0.20.2
+   Compiling jiff v0.2.37
+   Compiling macro_rules_attribute v0.2.3
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling compact_str v0.9.1
+   Compiling rayon-cond v0.4.0
+   Compiling dary_heap v0.3.9
+   Compiling pyo3-macros v0.25.1
+   Compiling derive_builder v0.20.2
+   Compiling ndarray v0.16.1
+   Compiling monostate v0.1.18
+   Compiling env_filter v2.0.0
+   Compiling rand v0.9.5
+   Compiling unicode_categories v0.1.1
+   Compiling rustc-hash v2.1.3
+   Compiling env_logger v0.11.11
+   Compiling onig v6.5.3
+   Compiling tokenizers v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/tokenizers)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/model.rs:359:17
+    |
+359 |     pub fn iter(&self) -> UnigramIterator {
+    |                 ^^^^^     ^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+359 |     pub fn iter(&self) -> UnigramIterator<'_> {
+    |                                          ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/trie.rs:33:36
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<Label, T>
+   |                                    ^^^^^                  ^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                    |
+   |                                    the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<'_, Label, T>
+   |                                                                        +++
+
+warning: `tokenizers` (lib) generated 2 warnings (run `cargo fix --lib -p tokenizers` to apply 2 suggestions)
+   Compiling tokenizers-python v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/bindings/python)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:344:23
+    |
+344 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: consistently use `'_`
+    |
+344 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:361:23
+    |
+361 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+361 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:425:23
+    |
+425 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+425 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:442:23
+    |
+442 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+442 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: `tokenizers-python` (lib) generated 4 warnings (run `cargo fix --lib -p tokenizers-python` to apply 4 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.29s
+📦 Built wheel for abi3 Python ≥ 3.9 to /home/wheel/hb/wide/artifacts/wheels-neon8/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+WHEEL_OK neon8
+===== VENV neon8 =====
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting certifi==2026.7.22 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 1))
+  Downloading https://mirrors.aliyun.com/pypi/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl (136 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 137.0/137.0 kB 158.1 kB/s eta 0:00:00
+Collecting charset-normalizer==3.5.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 2))
+  Using cached https://mirrors.aliyun.com/pypi/packages/d5/fa/6a7e2a7c4b5451912b8c417732df79574354443592a88d616de03da66ae5/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (251 kB)
+Collecting filelock==4.0.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 3))
+  Using cached https://mirrors.aliyun.com/pypi/packages/29/33/af0635ab07fe83b1788a1dbe370ff3e226062495a998335cb18a1cac81aa/filelock-4.0.1-py3-none-any.whl (106 kB)
+Collecting fsspec==2026.9.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 4))
+  Using cached https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Collecting hf-xet==1.6.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 5))
+  Using cached https://mirrors.aliyun.com/pypi/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+Collecting huggingface_hub==0.36.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 6))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+Collecting idna==3.20 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 7))
+  Using cached https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl (69 kB)
+Collecting maturin==1.15.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 8))
+  Using cached https://mirrors.aliyun.com/pypi/packages/5d/2b/2abff58037188d852b124871b1f0d720e1c2bfb3d4f1b03d87c52cd66488/maturin-1.15.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl (10.1 MB)
+Collecting numpy==2.4.6 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 9))
+  Using cached https://mirrors.aliyun.com/pypi/packages/33/a8/6fa8c1a345a8c85dbb21932c447bee07c30a2c2a3f31e369c0a84b300147/numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+Collecting packaging==26.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 10))
+  Downloading https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl (129 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.0/130.0 kB 180.7 kB/s eta 0:00:00
+Collecting PyYAML==6.0.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 11))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0c/62/d2eb46264d4b157dae1275b573017abec435397aa59cbcdab6fc978a8af4/pyyaml-6.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (775 kB)
+Collecting regex==2026.9.10 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 12))
+  Using cached https://mirrors.aliyun.com/pypi/packages/af/cb/4dd3b7190b5a169c81a4d63b487d65e9fb23689b771f5aceb91d9e7f65bb/regex-2026.9.10-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (796 kB)
+Collecting requests==2.34.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 13))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting safetensors==0.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 14))
+  Using cached https://mirrors.aliyun.com/pypi/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+Collecting tokenizers==0.21.4 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 15))
+  Using cached https://mirrors.aliyun.com/pypi/packages/aa/8f/24f39d7b5c726b7b0be95dca04f344df278a3fe3a4deb15a975d194cbb32/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.0 MB)
+Collecting tqdm==4.70.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 16))
+  Downloading https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl (80 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 184.8 kB/s eta 0:00:00
+Collecting transformers==4.48.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 17))
+  Downloading https://mirrors.aliyun.com/pypi/packages/b6/1a/efeecb8d83705f2f4beac98d46f2148c95ecd7babfb31b5c0f1e7017e83d/transformers-4.48.3-py3-none-any.whl (9.7 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.7/9.7 MB 57.6 kB/s eta 0:00:00
+Collecting typing_extensions==4.16.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 18))
+  Downloading https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 89.4 kB/s eta 0:00:00
+Collecting urllib3==2.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 19))
+  Using cached https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Installing collected packages: urllib3, typing_extensions, tqdm, safetensors, regex, PyYAML, packaging, numpy, maturin, idna, hf-xet, fsspec, filelock, charset-normalizer, certifi, requests, huggingface_hub, tokenizers, transformers
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset-normalizer-3.5.1 filelock-4.0.1 fsspec-2026.9.0 hf-xet-1.6.0 huggingface_hub-0.36.2 idna-3.20 maturin-1.15.0 numpy-2.4.6 packaging-26.3 regex-2026.9.10 requests-2.34.2 safetensors-0.8.0 tokenizers-0.21.4 tqdm-4.70.1 transformers-4.48.3 typing_extensions-4.16.0 urllib3-2.8.0
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Processing ./artifacts/wheels-neon8/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+Installing collected packages: tokenizers
+  Attempting uninstall: tokenizers
+    Found existing installation: tokenizers 0.21.4
+    Uninstalling tokenizers-0.21.4:
+      Successfully uninstalled tokenizers-0.21.4
+Successfully installed tokenizers-0.21.4
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+No broken requirements found.
+default PASS
+rayon1 PASS
+rayon8 PASS
+VENV_OK neon8
+===== WHEEL neon16 =====
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /home/wheel/hb/shared/venv-build/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+📡 Using build options features, bindings from pyproject.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.1
+   Compiling once_cell v1.21.4
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling shlex v2.0.1
+   Compiling memchr v2.8.3
+   Compiling find-msvc-tools v0.1.13
+   Compiling crossbeam-utils v0.8.23
+   Compiling strsim v0.11.1
+   Compiling cc v1.4.7
+   Compiling getrandom v0.3.4
+   Compiling fnv v1.0.7
+   Compiling cfg-if v1.0.5
+   Compiling ident_case v1.0.1
+   Compiling zerocopy v0.8.57
+   Compiling crossbeam-epoch v0.9.21
+   Compiling serde v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling rayon-core v1.13.0
+   Compiling regex-syntax v0.8.11
+   Compiling pyo3-build-config v0.25.1
+   Compiling pkg-config v0.3.34
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling rustversion v1.0.23
+   Compiling matrixmultiply v0.3.11
+   Compiling memoffset v0.9.1
+   Compiling heck v0.5.0
+   Compiling portable-atomic v1.15.0
+   Compiling version_check v0.9.5
+   Compiling either v1.18.0
+   Compiling onig_sys v69.9.3
+   Compiling zmij v1.0.23
+   Compiling ahash v0.8.12
+   Compiling esaxx-rs v0.1.10
+   Compiling rand_core v0.9.5
+   Compiling thiserror v2.0.21
+   Compiling serde_json v1.0.151
+   Compiling regex-automata v0.4.18
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling unicode-width v0.2.2
+   Compiling log v0.4.34
+   Compiling paste v1.0.15
+   Compiling itoa v1.0.18
+   Compiling rawpointer v0.2.1
+   Compiling minimal-lexical v0.2.1
+   Compiling utf8parse v0.2.2
+   Compiling anstyle-parse v1.0.0
+   Compiling nom v7.1.3
+   Compiling console v0.15.11
+   Compiling castaway v0.2.4
+   Compiling rayon v1.12.0
+   Compiling serde_derive v1.0.229
+   Compiling darling_core v0.20.11
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling thiserror-impl v2.0.21
+   Compiling regex v1.13.1
+   Compiling monostate-impl v0.1.18
+   Compiling numpy v0.25.0
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling itertools v0.14.0
+   Compiling base64 v0.13.1
+   Compiling anstyle-query v1.1.5
+   Compiling number_prefix v0.4.0
+   Compiling darling_macro v0.20.11
+   Compiling bitflags v2.13.2
+   Compiling anstyle v1.0.14
+   Compiling pastey v0.2.3
+   Compiling unicode-segmentation v1.13.3
+   Compiling static_assertions v1.1.0
+   Compiling indoc v2.0.7
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling unindent v0.2.4
+   Compiling smallvec v1.16.1
+   Compiling ryu v1.0.23
+   Compiling macro_rules_attribute-proc_macro v0.2.3
+   Compiling darling v0.20.11
+   Compiling derive_builder_core v0.20.2
+   Compiling colorchoice v1.0.5
+   Compiling jiff-core v0.1.1
+   Compiling anstream v1.0.0
+   Compiling compact_str v0.9.1
+   Compiling spm_precompiled v0.1.4
+   Compiling dary_heap v0.3.9
+   Compiling macro_rules_attribute v0.2.3
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling rayon-cond v0.4.0
+   Compiling indicatif v0.17.11
+   Compiling ndarray v0.16.1
+   Compiling derive_builder_macro v0.20.2
+   Compiling jiff v0.2.37
+   Compiling monostate v0.1.18
+   Compiling pyo3-macros v0.25.1
+   Compiling env_filter v2.0.0
+   Compiling rand v0.9.5
+   Compiling derive_builder v0.20.2
+   Compiling unicode_categories v0.1.1
+   Compiling rustc-hash v2.1.3
+   Compiling env_logger v0.11.11
+   Compiling onig v6.5.3
+   Compiling tokenizers v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/tokenizers)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/model.rs:359:17
+    |
+359 |     pub fn iter(&self) -> UnigramIterator {
+    |                 ^^^^^     ^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+359 |     pub fn iter(&self) -> UnigramIterator<'_> {
+    |                                          ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/trie.rs:33:36
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<Label, T>
+   |                                    ^^^^^                  ^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                    |
+   |                                    the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<'_, Label, T>
+   |                                                                        +++
+
+warning: `tokenizers` (lib) generated 2 warnings (run `cargo fix --lib -p tokenizers` to apply 2 suggestions)
+   Compiling tokenizers-python v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/bindings/python)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:344:23
+    |
+344 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: consistently use `'_`
+    |
+344 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:361:23
+    |
+361 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+361 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:425:23
+    |
+425 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+425 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:442:23
+    |
+442 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+442 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: `tokenizers-python` (lib) generated 4 warnings (run `cargo fix --lib -p tokenizers-python` to apply 4 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.03s
+📦 Built wheel for abi3 Python ≥ 3.9 to /home/wheel/hb/wide/artifacts/wheels-neon16/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+WHEEL_OK neon16
+===== VENV neon16 =====
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting certifi==2026.7.22 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 1))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl (136 kB)
+Collecting charset-normalizer==3.5.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 2))
+  Using cached https://mirrors.aliyun.com/pypi/packages/d5/fa/6a7e2a7c4b5451912b8c417732df79574354443592a88d616de03da66ae5/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (251 kB)
+Collecting filelock==4.0.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 3))
+  Using cached https://mirrors.aliyun.com/pypi/packages/29/33/af0635ab07fe83b1788a1dbe370ff3e226062495a998335cb18a1cac81aa/filelock-4.0.1-py3-none-any.whl (106 kB)
+Collecting fsspec==2026.9.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 4))
+  Using cached https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Collecting hf-xet==1.6.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 5))
+  Using cached https://mirrors.aliyun.com/pypi/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+Collecting huggingface_hub==0.36.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 6))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+Collecting idna==3.20 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 7))
+  Using cached https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl (69 kB)
+Collecting maturin==1.15.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 8))
+  Using cached https://mirrors.aliyun.com/pypi/packages/5d/2b/2abff58037188d852b124871b1f0d720e1c2bfb3d4f1b03d87c52cd66488/maturin-1.15.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl (10.1 MB)
+Collecting numpy==2.4.6 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 9))
+  Using cached https://mirrors.aliyun.com/pypi/packages/33/a8/6fa8c1a345a8c85dbb21932c447bee07c30a2c2a3f31e369c0a84b300147/numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+Collecting packaging==26.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 10))
+  Using cached https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl (129 kB)
+Collecting PyYAML==6.0.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 11))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0c/62/d2eb46264d4b157dae1275b573017abec435397aa59cbcdab6fc978a8af4/pyyaml-6.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (775 kB)
+Collecting regex==2026.9.10 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 12))
+  Using cached https://mirrors.aliyun.com/pypi/packages/af/cb/4dd3b7190b5a169c81a4d63b487d65e9fb23689b771f5aceb91d9e7f65bb/regex-2026.9.10-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (796 kB)
+Collecting requests==2.34.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 13))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting safetensors==0.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 14))
+  Using cached https://mirrors.aliyun.com/pypi/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+Collecting tokenizers==0.21.4 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 15))
+  Using cached https://mirrors.aliyun.com/pypi/packages/aa/8f/24f39d7b5c726b7b0be95dca04f344df278a3fe3a4deb15a975d194cbb32/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.0 MB)
+Collecting tqdm==4.70.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 16))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl (80 kB)
+Collecting transformers==4.48.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 17))
+  Using cached https://mirrors.aliyun.com/pypi/packages/b6/1a/efeecb8d83705f2f4beac98d46f2148c95ecd7babfb31b5c0f1e7017e83d/transformers-4.48.3-py3-none-any.whl (9.7 MB)
+Collecting typing_extensions==4.16.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 18))
+  Using cached https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Collecting urllib3==2.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 19))
+  Using cached https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Installing collected packages: urllib3, typing_extensions, tqdm, safetensors, regex, PyYAML, packaging, numpy, maturin, idna, hf-xet, fsspec, filelock, charset-normalizer, certifi, requests, huggingface_hub, tokenizers, transformers
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset-normalizer-3.5.1 filelock-4.0.1 fsspec-2026.9.0 hf-xet-1.6.0 huggingface_hub-0.36.2 idna-3.20 maturin-1.15.0 numpy-2.4.6 packaging-26.3 regex-2026.9.10 requests-2.34.2 safetensors-0.8.0 tokenizers-0.21.4 tqdm-4.70.1 transformers-4.48.3 typing_extensions-4.16.0 urllib3-2.8.0
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Processing ./artifacts/wheels-neon16/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+Installing collected packages: tokenizers
+  Attempting uninstall: tokenizers
+    Found existing installation: tokenizers 0.21.4
+    Uninstalling tokenizers-0.21.4:
+      Successfully uninstalled tokenizers-0.21.4
+Successfully installed tokenizers-0.21.4
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+No broken requirements found.
+default PASS
+rayon1 PASS
+rayon8 PASS
+VENV_OK neon16
+===== WHEEL sve16-fused =====
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /home/wheel/hb/shared/venv-build/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+📡 Using build options features, bindings from pyproject.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling target-lexicon v0.13.5
+   Compiling once_cell v1.21.4
+   Compiling autocfg v1.5.1
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling memchr v2.8.3
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.13
+   Compiling crossbeam-utils v0.8.23
+   Compiling getrandom v0.3.4
+   Compiling cc v1.4.7
+   Compiling fnv v1.0.7
+   Compiling zerocopy v0.8.57
+   Compiling ident_case v1.0.1
+   Compiling crossbeam-epoch v0.9.21
+   Compiling strsim v0.11.1
+   Compiling serde v1.0.229
+   Compiling cfg-if v1.0.5
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling rustversion v1.0.23
+   Compiling regex-syntax v0.8.11
+   Compiling rayon-core v1.13.0
+   Compiling pyo3-build-config v0.25.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling pkg-config v0.3.34
+   Compiling matrixmultiply v0.3.11
+   Compiling memoffset v0.9.1
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling onig_sys v69.9.3
+   Compiling portable-atomic v1.15.0
+   Compiling version_check v0.9.5
+   Compiling either v1.18.0
+   Compiling esaxx-rs v0.1.10
+   Compiling ahash v0.8.12
+   Compiling rand_core v0.9.5
+   Compiling log v0.4.34
+   Compiling paste v1.0.15
+   Compiling regex-automata v0.4.18
+   Compiling itoa v1.0.18
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling thiserror v2.0.21
+   Compiling serde_json v1.0.151
+   Compiling utf8parse v0.2.2
+   Compiling unicode-width v0.2.2
+   Compiling rawpointer v0.2.1
+   Compiling minimal-lexical v0.2.1
+   Compiling console v0.15.11
+   Compiling nom v7.1.3
+   Compiling anstyle-parse v1.0.0
+   Compiling serde_derive v1.0.229
+   Compiling darling_core v0.20.11
+   Compiling thiserror-impl v2.0.21
+   Compiling ppv-lite86 v0.2.21
+   Compiling castaway v0.2.4
+   Compiling rand_chacha v0.9.0
+   Compiling regex v1.13.1
+   Compiling numpy v0.25.0
+   Compiling rayon v1.12.0
+   Compiling monostate-impl v0.1.18
+   Compiling itertools v0.14.0
+   Compiling darling_macro v0.20.11
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling number_prefix v0.4.0
+   Compiling pastey v0.2.3
+   Compiling darling v0.20.11
+   Compiling bitflags v2.13.2
+   Compiling derive_builder_core v0.20.2
+   Compiling macro_rules_attribute-proc_macro v0.2.3
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling ryu v1.0.23
+   Compiling base64 v0.13.1
+   Compiling static_assertions v1.1.0
+   Compiling smallvec v1.16.1
+   Compiling jiff-core v0.1.1
+   Compiling unindent v0.2.4
+   Compiling indoc v2.0.7
+   Compiling anstyle-query v1.1.5
+   Compiling unicode-segmentation v1.13.3
+   Compiling colorchoice v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling anstream v1.0.0
+   Compiling dary_heap v0.3.9
+   Compiling compact_str v0.9.1
+   Compiling rayon-cond v0.4.0
+   Compiling derive_builder_macro v0.20.2
+   Compiling spm_precompiled v0.1.4
+   Compiling pyo3-macros v0.25.1
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling macro_rules_attribute v0.2.3
+   Compiling ndarray v0.16.1
+   Compiling jiff v0.2.37
+   Compiling indicatif v0.17.11
+   Compiling derive_builder v0.20.2
+   Compiling monostate v0.1.18
+   Compiling env_filter v2.0.0
+   Compiling rand v0.9.5
+   Compiling unicode_categories v0.1.1
+   Compiling rustc-hash v2.1.3
+   Compiling env_logger v0.11.11
+   Compiling onig v6.5.3
+   Compiling tokenizers v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/tokenizers)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/model.rs:359:17
+    |
+359 |     pub fn iter(&self) -> UnigramIterator {
+    |                 ^^^^^     ^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+359 |     pub fn iter(&self) -> UnigramIterator<'_> {
+    |                                          ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/trie.rs:33:36
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<Label, T>
+   |                                    ^^^^^                  ^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                    |
+   |                                    the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<'_, Label, T>
+   |                                                                        +++
+
+warning: `tokenizers` (lib) generated 2 warnings (run `cargo fix --lib -p tokenizers` to apply 2 suggestions)
+   Compiling tokenizers-python v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/bindings/python)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:344:23
+    |
+344 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: consistently use `'_`
+    |
+344 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:361:23
+    |
+361 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+361 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:425:23
+    |
+425 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+425 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:442:23
+    |
+442 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+442 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: `tokenizers-python` (lib) generated 4 warnings (run `cargo fix --lib -p tokenizers-python` to apply 4 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 29.93s
+📦 Built wheel for abi3 Python ≥ 3.9 to /home/wheel/hb/wide/artifacts/wheels-sve16-fused/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+WHEEL_OK sve16-fused
+===== VENV sve16-fused =====
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting certifi==2026.7.22 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 1))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl (136 kB)
+Collecting charset-normalizer==3.5.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 2))
+  Using cached https://mirrors.aliyun.com/pypi/packages/d5/fa/6a7e2a7c4b5451912b8c417732df79574354443592a88d616de03da66ae5/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (251 kB)
+Collecting filelock==4.0.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 3))
+  Using cached https://mirrors.aliyun.com/pypi/packages/29/33/af0635ab07fe83b1788a1dbe370ff3e226062495a998335cb18a1cac81aa/filelock-4.0.1-py3-none-any.whl (106 kB)
+Collecting fsspec==2026.9.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 4))
+  Using cached https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Collecting hf-xet==1.6.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 5))
+  Using cached https://mirrors.aliyun.com/pypi/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+Collecting huggingface_hub==0.36.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 6))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+Collecting idna==3.20 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 7))
+  Using cached https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl (69 kB)
+Collecting maturin==1.15.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 8))
+  Using cached https://mirrors.aliyun.com/pypi/packages/5d/2b/2abff58037188d852b124871b1f0d720e1c2bfb3d4f1b03d87c52cd66488/maturin-1.15.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl (10.1 MB)
+Collecting numpy==2.4.6 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 9))
+  Using cached https://mirrors.aliyun.com/pypi/packages/33/a8/6fa8c1a345a8c85dbb21932c447bee07c30a2c2a3f31e369c0a84b300147/numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+Collecting packaging==26.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 10))
+  Using cached https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl (129 kB)
+Collecting PyYAML==6.0.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 11))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0c/62/d2eb46264d4b157dae1275b573017abec435397aa59cbcdab6fc978a8af4/pyyaml-6.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (775 kB)
+Collecting regex==2026.9.10 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 12))
+  Using cached https://mirrors.aliyun.com/pypi/packages/af/cb/4dd3b7190b5a169c81a4d63b487d65e9fb23689b771f5aceb91d9e7f65bb/regex-2026.9.10-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (796 kB)
+Collecting requests==2.34.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 13))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting safetensors==0.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 14))
+  Using cached https://mirrors.aliyun.com/pypi/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+Collecting tokenizers==0.21.4 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 15))
+  Using cached https://mirrors.aliyun.com/pypi/packages/aa/8f/24f39d7b5c726b7b0be95dca04f344df278a3fe3a4deb15a975d194cbb32/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.0 MB)
+Collecting tqdm==4.70.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 16))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl (80 kB)
+Collecting transformers==4.48.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 17))
+  Using cached https://mirrors.aliyun.com/pypi/packages/b6/1a/efeecb8d83705f2f4beac98d46f2148c95ecd7babfb31b5c0f1e7017e83d/transformers-4.48.3-py3-none-any.whl (9.7 MB)
+Collecting typing_extensions==4.16.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 18))
+  Using cached https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Collecting urllib3==2.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 19))
+  Using cached https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Installing collected packages: urllib3, typing_extensions, tqdm, safetensors, regex, PyYAML, packaging, numpy, maturin, idna, hf-xet, fsspec, filelock, charset-normalizer, certifi, requests, huggingface_hub, tokenizers, transformers
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset-normalizer-3.5.1 filelock-4.0.1 fsspec-2026.9.0 hf-xet-1.6.0 huggingface_hub-0.36.2 idna-3.20 maturin-1.15.0 numpy-2.4.6 packaging-26.3 regex-2026.9.10 requests-2.34.2 safetensors-0.8.0 tokenizers-0.21.4 tqdm-4.70.1 transformers-4.48.3 typing_extensions-4.16.0 urllib3-2.8.0
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Processing ./artifacts/wheels-sve16-fused/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+Installing collected packages: tokenizers
+  Attempting uninstall: tokenizers
+    Found existing installation: tokenizers 0.21.4
+    Uninstalling tokenizers-0.21.4:
+      Successfully uninstalled tokenizers-0.21.4
+Successfully installed tokenizers-0.21.4
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+No broken requirements found.
+default PASS
+rayon1 PASS
+rayon8 PASS
+VENV_OK sve16-fused
+===== WHEEL sve32-fused =====
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /home/wheel/hb/shared/venv-build/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+📡 Using build options features, bindings from pyproject.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.1
+   Compiling once_cell v1.21.4
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling memchr v2.8.3
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.13
+   Compiling crossbeam-utils v0.8.23
+   Compiling fnv v1.0.7
+   Compiling strsim v0.11.1
+   Compiling cc v1.4.7
+   Compiling ident_case v1.0.1
+   Compiling cfg-if v1.0.5
+   Compiling serde v1.0.229
+   Compiling crossbeam-epoch v0.9.21
+   Compiling zerocopy v0.8.57
+   Compiling getrandom v0.3.4
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling regex-syntax v0.8.11
+   Compiling rayon-core v1.13.0
+   Compiling pkg-config v0.3.34
+   Compiling pyo3-build-config v0.25.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling rustversion v1.0.23
+   Compiling matrixmultiply v0.3.11
+   Compiling memoffset v0.9.1
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling version_check v0.9.5
+   Compiling either v1.18.0
+   Compiling portable-atomic v1.15.0
+   Compiling onig_sys v69.9.3
+   Compiling esaxx-rs v0.1.10
+   Compiling ahash v0.8.12
+   Compiling rand_core v0.9.5
+   Compiling paste v1.0.15
+   Compiling minimal-lexical v0.2.1
+   Compiling regex-automata v0.4.18
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling thiserror v2.0.21
+   Compiling rawpointer v0.2.1
+   Compiling utf8parse v0.2.2
+   Compiling log v0.4.34
+   Compiling itoa v1.0.18
+   Compiling unicode-width v0.2.2
+   Compiling serde_json v1.0.151
+   Compiling console v0.15.11
+   Compiling anstyle-parse v1.0.0
+   Compiling castaway v0.2.4
+   Compiling rayon v1.12.0
+   Compiling numpy v0.25.0
+   Compiling serde_derive v1.0.229
+   Compiling darling_core v0.20.11
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling thiserror-impl v2.0.21
+   Compiling nom v7.1.3
+   Compiling regex v1.13.1
+   Compiling monostate-impl v0.1.18
+   Compiling darling_macro v0.20.11
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling itertools v0.14.0
+   Compiling jiff-core v0.1.1
+   Compiling base64 v0.13.1
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling unicode-segmentation v1.13.3
+   Compiling darling v0.20.11
+   Compiling derive_builder_core v0.20.2
+   Compiling unindent v0.2.4
+   Compiling ryu v1.0.23
+   Compiling indoc v2.0.7
+   Compiling colorchoice v1.0.5
+   Compiling pastey v0.2.3
+   Compiling number_prefix v0.4.0
+   Compiling bitflags v2.13.2
+   Compiling static_assertions v1.1.0
+   Compiling smallvec v1.16.1
+   Compiling anstyle-query v1.1.5
+   Compiling anstyle v1.0.14
+   Compiling macro_rules_attribute-proc_macro v0.2.3
+   Compiling anstream v1.0.0
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling jiff v0.2.37
+   Compiling derive_builder_macro v0.20.2
+   Compiling indicatif v0.17.11
+   Compiling macro_rules_attribute v0.2.3
+   Compiling rayon-cond v0.4.0
+   Compiling pyo3-macros v0.25.1
+   Compiling compact_str v0.9.1
+   Compiling dary_heap v0.3.9
+   Compiling spm_precompiled v0.1.4
+   Compiling ndarray v0.16.1
+   Compiling derive_builder v0.20.2
+   Compiling monostate v0.1.18
+   Compiling env_filter v2.0.0
+   Compiling rand v0.9.5
+   Compiling unicode_categories v0.1.1
+   Compiling rustc-hash v2.1.3
+   Compiling env_logger v0.11.11
+   Compiling onig v6.5.3
+   Compiling tokenizers v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/tokenizers)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/model.rs:359:17
+    |
+359 |     pub fn iter(&self) -> UnigramIterator {
+    |                 ^^^^^     ^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+359 |     pub fn iter(&self) -> UnigramIterator<'_> {
+    |                                          ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/trie.rs:33:36
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<Label, T>
+   |                                    ^^^^^                  ^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                    |
+   |                                    the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<'_, Label, T>
+   |                                                                        +++
+
+warning: `tokenizers` (lib) generated 2 warnings (run `cargo fix --lib -p tokenizers` to apply 2 suggestions)
+   Compiling tokenizers-python v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/bindings/python)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:344:23
+    |
+344 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: consistently use `'_`
+    |
+344 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:361:23
+    |
+361 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+361 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:425:23
+    |
+425 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+425 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:442:23
+    |
+442 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+442 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: `tokenizers-python` (lib) generated 4 warnings (run `cargo fix --lib -p tokenizers-python` to apply 4 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 29.71s
+📦 Built wheel for abi3 Python ≥ 3.9 to /home/wheel/hb/wide/artifacts/wheels-sve32-fused/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+WHEEL_OK sve32-fused
+===== VENV sve32-fused =====
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting certifi==2026.7.22 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 1))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl (136 kB)
+Collecting charset-normalizer==3.5.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 2))
+  Using cached https://mirrors.aliyun.com/pypi/packages/d5/fa/6a7e2a7c4b5451912b8c417732df79574354443592a88d616de03da66ae5/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (251 kB)
+Collecting filelock==4.0.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 3))
+  Using cached https://mirrors.aliyun.com/pypi/packages/29/33/af0635ab07fe83b1788a1dbe370ff3e226062495a998335cb18a1cac81aa/filelock-4.0.1-py3-none-any.whl (106 kB)
+Collecting fsspec==2026.9.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 4))
+  Using cached https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Collecting hf-xet==1.6.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 5))
+  Using cached https://mirrors.aliyun.com/pypi/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+Collecting huggingface_hub==0.36.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 6))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+Collecting idna==3.20 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 7))
+  Using cached https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl (69 kB)
+Collecting maturin==1.15.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 8))
+  Using cached https://mirrors.aliyun.com/pypi/packages/5d/2b/2abff58037188d852b124871b1f0d720e1c2bfb3d4f1b03d87c52cd66488/maturin-1.15.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl (10.1 MB)
+Collecting numpy==2.4.6 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 9))
+  Using cached https://mirrors.aliyun.com/pypi/packages/33/a8/6fa8c1a345a8c85dbb21932c447bee07c30a2c2a3f31e369c0a84b300147/numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+Collecting packaging==26.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 10))
+  Using cached https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl (129 kB)
+Collecting PyYAML==6.0.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 11))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0c/62/d2eb46264d4b157dae1275b573017abec435397aa59cbcdab6fc978a8af4/pyyaml-6.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (775 kB)
+Collecting regex==2026.9.10 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 12))
+  Using cached https://mirrors.aliyun.com/pypi/packages/af/cb/4dd3b7190b5a169c81a4d63b487d65e9fb23689b771f5aceb91d9e7f65bb/regex-2026.9.10-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (796 kB)
+Collecting requests==2.34.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 13))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting safetensors==0.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 14))
+  Using cached https://mirrors.aliyun.com/pypi/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+Collecting tokenizers==0.21.4 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 15))
+  Using cached https://mirrors.aliyun.com/pypi/packages/aa/8f/24f39d7b5c726b7b0be95dca04f344df278a3fe3a4deb15a975d194cbb32/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.0 MB)
+Collecting tqdm==4.70.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 16))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl (80 kB)
+Collecting transformers==4.48.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 17))
+  Using cached https://mirrors.aliyun.com/pypi/packages/b6/1a/efeecb8d83705f2f4beac98d46f2148c95ecd7babfb31b5c0f1e7017e83d/transformers-4.48.3-py3-none-any.whl (9.7 MB)
+Collecting typing_extensions==4.16.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 18))
+  Using cached https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Collecting urllib3==2.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 19))
+  Using cached https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Installing collected packages: urllib3, typing_extensions, tqdm, safetensors, regex, PyYAML, packaging, numpy, maturin, idna, hf-xet, fsspec, filelock, charset-normalizer, certifi, requests, huggingface_hub, tokenizers, transformers
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset-normalizer-3.5.1 filelock-4.0.1 fsspec-2026.9.0 hf-xet-1.6.0 huggingface_hub-0.36.2 idna-3.20 maturin-1.15.0 numpy-2.4.6 packaging-26.3 regex-2026.9.10 requests-2.34.2 safetensors-0.8.0 tokenizers-0.21.4 tqdm-4.70.1 transformers-4.48.3 typing_extensions-4.16.0 urllib3-2.8.0
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Processing ./artifacts/wheels-sve32-fused/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+Installing collected packages: tokenizers
+  Attempting uninstall: tokenizers
+    Found existing installation: tokenizers 0.21.4
+    Uninstalling tokenizers-0.21.4:
+      Successfully uninstalled tokenizers-0.21.4
+Successfully installed tokenizers-0.21.4
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+No broken requirements found.
+default PASS
+rayon1 PASS
+rayon8 PASS
+VENV_OK sve32-fused
+===== WHEEL sve32-fused-private =====
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /home/wheel/hb/shared/venv-build/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+📡 Using build options features, bindings from pyproject.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling target-lexicon v0.13.5
+   Compiling once_cell v1.21.4
+   Compiling autocfg v1.5.1
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling memchr v2.8.3
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling getrandom v0.3.4
+   Compiling cc v1.4.7
+   Compiling strsim v0.11.1
+   Compiling ident_case v1.0.1
+   Compiling fnv v1.0.7
+   Compiling zerocopy v0.8.57
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cfg-if v1.0.5
+   Compiling serde v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling pkg-config v0.3.34
+   Compiling rayon-core v1.13.0
+   Compiling pyo3-build-config v0.25.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling rustversion v1.0.23
+   Compiling regex-syntax v0.8.11
+   Compiling memoffset v0.9.1
+   Compiling matrixmultiply v0.3.11
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling version_check v0.9.5
+   Compiling portable-atomic v1.15.0
+   Compiling either v1.18.0
+   Compiling ahash v0.8.12
+   Compiling onig_sys v69.9.3
+   Compiling esaxx-rs v0.1.10
+   Compiling rand_core v0.9.5
+   Compiling paste v1.0.15
+   Compiling minimal-lexical v0.2.1
+   Compiling serde_json v1.0.151
+   Compiling utf8parse v0.2.2
+   Compiling unicode-width v0.2.2
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling itoa v1.0.18
+   Compiling regex-automata v0.4.18
+   Compiling rawpointer v0.2.1
+   Compiling thiserror v2.0.21
+   Compiling log v0.4.34
+   Compiling console v0.15.11
+   Compiling castaway v0.2.4
+   Compiling rayon v1.12.0
+   Compiling numpy v0.25.0
+   Compiling darling_core v0.20.11
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling ppv-lite86 v0.2.21
+   Compiling anstyle-parse v1.0.0
+   Compiling rand_chacha v0.9.0
+   Compiling nom v7.1.3
+   Compiling regex v1.13.1
+   Compiling monostate-impl v0.1.18
+   Compiling itertools v0.14.0
+   Compiling darling_macro v0.20.11
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling base64 v0.13.1
+   Compiling darling v0.20.11
+   Compiling derive_builder_core v0.20.2
+   Compiling smallvec v1.16.1
+   Compiling static_assertions v1.1.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling anstyle-query v1.1.5
+   Compiling macro_rules_attribute-proc_macro v0.2.3
+   Compiling jiff-core v0.1.1
+   Compiling bitflags v2.13.2
+   Compiling ryu v1.0.23
+   Compiling pastey v0.2.3
+   Compiling colorchoice v1.0.5
+   Compiling indoc v2.0.7
+   Compiling unindent v0.2.4
+   Compiling number_prefix v0.4.0
+   Compiling anstyle v1.0.14
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling rayon-cond v0.4.0
+   Compiling anstream v1.0.0
+   Compiling indicatif v0.17.11
+   Compiling spm_precompiled v0.1.4
+   Compiling dary_heap v0.3.9
+   Compiling derive_builder_macro v0.20.2
+   Compiling compact_str v0.9.1
+   Compiling macro_rules_attribute v0.2.3
+   Compiling jiff v0.2.37
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling pyo3-macros v0.25.1
+   Compiling ndarray v0.16.1
+   Compiling derive_builder v0.20.2
+   Compiling monostate v0.1.18
+   Compiling env_filter v2.0.0
+   Compiling rand v0.9.5
+   Compiling rustc-hash v2.1.3
+   Compiling unicode_categories v0.1.1
+   Compiling env_logger v0.11.11
+   Compiling onig v6.5.3
+   Compiling tokenizers v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/tokenizers)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/model.rs:359:17
+    |
+359 |     pub fn iter(&self) -> UnigramIterator {
+    |                 ^^^^^     ^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+359 |     pub fn iter(&self) -> UnigramIterator<'_> {
+    |                                          ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /home/wheel/hb/wide/tokenizers-clean/tokenizers/src/models/unigram/trie.rs:33:36
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<Label, T>
+   |                                    ^^^^^                  ^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                    |
+   |                                    the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+33 |     pub fn common_prefix_search<T>(&self, iterator: T) -> TrieIterator<'_, Label, T>
+   |                                                                        +++
+
+warning: `tokenizers` (lib) generated 2 warnings (run `cargo fix --lib -p tokenizers` to apply 2 suggestions)
+   Compiling tokenizers-python v0.21.4 (/home/wheel/hb/wide/tokenizers-clean/bindings/python)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:344:23
+    |
+344 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: consistently use `'_`
+    |
+344 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:361:23
+    |
+361 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+361 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:425:23
+    |
+425 |     fn get_sep(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+425 |     fn get_sep(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/processors.rs:442:23
+    |
+442 |     fn get_cls(self_: PyRef<Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                       ^^^^^^^^^^^                  ^^ the same lifetime is elided here
+    |                       |
+    |                       the lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: consistently use `'_`
+    |
+442 |     fn get_cls(self_: PyRef<'_, Self>) -> Result<Bound<'_, PyTuple>, PyErr> {
+    |                             +++
+
+warning: `tokenizers-python` (lib) generated 4 warnings (run `cargo fix --lib -p tokenizers-python` to apply 4 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.03s
+📦 Built wheel for abi3 Python ≥ 3.9 to /home/wheel/hb/wide/artifacts/wheels-sve32-fused-private/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+WHEEL_OK sve32-fused-private
+===== VENV sve32-fused-private =====
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting certifi==2026.7.22 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 1))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl (136 kB)
+Collecting charset-normalizer==3.5.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 2))
+  Using cached https://mirrors.aliyun.com/pypi/packages/d5/fa/6a7e2a7c4b5451912b8c417732df79574354443592a88d616de03da66ae5/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (251 kB)
+Collecting filelock==4.0.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 3))
+  Using cached https://mirrors.aliyun.com/pypi/packages/29/33/af0635ab07fe83b1788a1dbe370ff3e226062495a998335cb18a1cac81aa/filelock-4.0.1-py3-none-any.whl (106 kB)
+Collecting fsspec==2026.9.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 4))
+  Using cached https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Collecting hf-xet==1.6.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 5))
+  Using cached https://mirrors.aliyun.com/pypi/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+Collecting huggingface_hub==0.36.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 6))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+Collecting idna==3.20 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 7))
+  Using cached https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl (69 kB)
+Collecting maturin==1.15.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 8))
+  Using cached https://mirrors.aliyun.com/pypi/packages/5d/2b/2abff58037188d852b124871b1f0d720e1c2bfb3d4f1b03d87c52cd66488/maturin-1.15.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl (10.1 MB)
+Collecting numpy==2.4.6 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 9))
+  Using cached https://mirrors.aliyun.com/pypi/packages/33/a8/6fa8c1a345a8c85dbb21932c447bee07c30a2c2a3f31e369c0a84b300147/numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+Collecting packaging==26.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 10))
+  Using cached https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl (129 kB)
+Collecting PyYAML==6.0.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 11))
+  Using cached https://mirrors.aliyun.com/pypi/packages/0c/62/d2eb46264d4b157dae1275b573017abec435397aa59cbcdab6fc978a8af4/pyyaml-6.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (775 kB)
+Collecting regex==2026.9.10 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 12))
+  Using cached https://mirrors.aliyun.com/pypi/packages/af/cb/4dd3b7190b5a169c81a4d63b487d65e9fb23689b771f5aceb91d9e7f65bb/regex-2026.9.10-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (796 kB)
+Collecting requests==2.34.2 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 13))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting safetensors==0.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 14))
+  Using cached https://mirrors.aliyun.com/pypi/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+Collecting tokenizers==0.21.4 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 15))
+  Using cached https://mirrors.aliyun.com/pypi/packages/aa/8f/24f39d7b5c726b7b0be95dca04f344df278a3fe3a4deb15a975d194cbb32/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.0 MB)
+Collecting tqdm==4.70.1 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 16))
+  Using cached https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl (80 kB)
+Collecting transformers==4.48.3 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 17))
+  Using cached https://mirrors.aliyun.com/pypi/packages/b6/1a/efeecb8d83705f2f4beac98d46f2148c95ecd7babfb31b5c0f1e7017e83d/transformers-4.48.3-py3-none-any.whl (9.7 MB)
+Collecting typing_extensions==4.16.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 18))
+  Using cached https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Collecting urllib3==2.8.0 (from -r /home/wheel/hb/shared/artifacts/python-requirements.lock (line 19))
+  Using cached https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Installing collected packages: urllib3, typing_extensions, tqdm, safetensors, regex, PyYAML, packaging, numpy, maturin, idna, hf-xet, fsspec, filelock, charset-normalizer, certifi, requests, huggingface_hub, tokenizers, transformers
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset-normalizer-3.5.1 filelock-4.0.1 fsspec-2026.9.0 hf-xet-1.6.0 huggingface_hub-0.36.2 idna-3.20 maturin-1.15.0 numpy-2.4.6 packaging-26.3 regex-2026.9.10 requests-2.34.2 safetensors-0.8.0 tokenizers-0.21.4 tqdm-4.70.1 transformers-4.48.3 typing_extensions-4.16.0 urllib3-2.8.0
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Processing ./artifacts/wheels-sve32-fused-private/tokenizers-0.21.4-cp39-abi3-linux_aarch64.whl
+Installing collected packages: tokenizers
+  Attempting uninstall: tokenizers
+    Found existing installation: tokenizers 0.21.4
+    Uninstalling tokenizers-0.21.4:
+      Successfully uninstalled tokenizers-0.21.4
+Successfully installed tokenizers-0.21.4
+
+[notice] A new release of pip is available: 23.3.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+No broken requirements found.
+default PASS
+rayon1 PASS
+rayon8 PASS
+VENV_OK sve32-fused-private
+ALL_DONE

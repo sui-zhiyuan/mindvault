@@ -1,0 +1,60 @@
+warning: unused macro definition: `default_fn`
+  --> /root/hashbrown-wide-20260924/probe/../hashbrown/src/macros.rs:66:14
+   |
+66 | macro_rules! default_fn {
+   |              ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_macros)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `TagSliceExt` and `bitmask::BitMaskIter`
+  --> /root/hashbrown-wide-20260924/probe/../hashbrown/src/control/mod.rs:10:5
+   |
+10 |     bitmask::BitMaskIter,
+   |     ^^^^^^^^^^^^^^^^^^^^
+11 |     group::Group,
+12 |     tag::{Tag, TagSliceExt},
+   |                ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated function `load_aligned` is never used
+   --> /root/hashbrown-wide-20260924/probe/../hashbrown/src/control/group/sve_register.rs:114:26
+    |
+ 89 | impl Group {
+    | ---------- associated function in this implementation
+...
+114 |     pub(crate) unsafe fn load_aligned(ptr: *const Tag) -> Self {
+    |                          ^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated items `is_full` and `full` are never used
+  --> /root/hashbrown-wide-20260924/probe/../hashbrown/src/control/tag.rs:16:25
+   |
+ 7 | impl Tag {
+   | -------- associated items in this implementation
+...
+16 |     pub(crate) const fn is_full(self) -> bool {
+   |                         ^^^^^^^
+...
+35 |     pub(crate) const fn full(hash: u64) -> Tag {
+   |                         ^^^^
+
+warning: trait `TagSliceExt` is never used
+  --> /root/hashbrown-wide-20260924/probe/../hashbrown/src/control/tag.rs:66:18
+   |
+66 | pub(crate) trait TagSliceExt {
+   |                  ^^^^^^^^^^^
+
+warning: 5 warnings emitted
+
+
+running 5 tests
+test control::tests::all_tags_unaligned_and_conversion ... ok
+test control::tests::exact_masks_and_zero_counts ... ok
+test control::tests::load_at_guard_page ... ok
+test control::tests::loaded_group_is_a_snapshot ... ok
+test control::tests::selected_backend_width ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
