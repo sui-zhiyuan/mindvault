@@ -26,6 +26,13 @@
 | `../measurements/local_x86/ab3.txt` | PyPI stock / 自编 stock / 自编补丁 三方交错配对原始输出（5 轮） |
 | `../measurements/local_x86/dump_{stock,patched}_x86.json` | 19 用例输出等价性导出（两者逐字节相同） |
 
+## 编译参数
+
+| 文件 | 内容 |
+|---|---|
+| `VARIANT_FLAGS.md` | **各变体的精确 RUSTFLAGS / Cargo profile / 源码**（复现必读） |
+| `b-v1.log` / `b-v2.log` / `b-v3.log` | v1-native / v2-feat / v3-featvl 的构建日志（v3 含唯一的 LLVM 后端参数） |
+
 ## 环境搭建（要点，日志未全量保留）
 
 - 私有工具链：`rustup toolchain install 1.98.1 --profile minimal --component rust-src`（走 rsproxy 镜像），随后整份拷贝到 `~/hb/toolchain-1.98.1` 以**彻底脱离 rustup**——因为 rustup 管理的副本在并发/被中断的安装下损坏过两次，且 shim 会触发慢速在线补装，污染构建。

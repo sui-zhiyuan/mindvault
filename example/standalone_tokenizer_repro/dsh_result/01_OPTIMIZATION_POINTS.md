@@ -1,6 +1,7 @@
 # 优化点汇总（本轮全部发现）
 
-> 全部收益都是**本机/远端实测**，不是估算（标注"未实测"的除外）。收益口径：端到端 `tokenizer_ms` p50，相对该机器的 stock 基线（aarch64 = `neon8` wheel，`-Ctarget-cpu=generic -Ctarget-feature=+sve`）。
+> **优化目标 = aarch64**（`192.168.41.50`）。所有收益默认指 aarch64 端到端 `tokenizer_ms` p50，相对该机 stock 基线（`neon8` wheel，`-Ctarget-cpu=generic -Ctarget-feature=+sve`）。
+> 表中出现的 x86 数值**只作对照与机制验证**（原始案例差距的定义、排除编译器污染），**不是优化目标**。
 > 详细原始数据见 `04_MEASUREMENTS.md` 与 `measurements/`。
 
 ## 一、速览
@@ -11,7 +12,7 @@
 | **P2** | `lto="fat"` + `codegen-units=1` | 跨 crate 内联（本负载由大量小函数/迭代器适配器组成） | **−10.2%~−10.5%** | 无 | ✅ **采纳**（改构建配置即可） |
 | **P3** | `-Ctarget-cpu=native` | 拿到 LSE 原子指令等 | **−0.6%~−1.1%** | 无 | ✅ 采纳（免费小收益） |
 | **P4** | **P1+P2+P3 组合** | — | **−29.5%~−30.1%**（37.37→26.08 ms） | 无 | ✅ **最优配置** |
-| P5 | 调用无 offsets 的 `encode_batch_fast`（内核 `OffsetType::None`） | 整段偏移计算被跳过 | −18.9%（x86 实测） | **offsets 变 (0,0)** | ⚠️ 仅在不需要 offsets 时 |
+| P5 | 调用无 offsets 的 `encode_batch_fast`（内核 `OffsetType::None`） | 整段偏移计算被跳过 | **aarch64 未实测**（x86 仅作对照 −18.9%；ARM 上该组件更贵，预计同量级或更高） | **offsets 变 (0,0)** | ⚠️ 仅在不需要 offsets 时；ARM 落地前需实测 |
 | P6 | 换分配器 jemalloc/mimalloc/tcmalloc | 分配器+memcpy 占 36~47% | 未实测（预估 −5~15%） | 无 | 🔬 待实测 |
 | P7 | 减少临时 String/Vec、复用缓冲 | `NormalizedString::slice` 8.0%（93% 分配器）、`drop<Encoding>` 4.4%（98% 分配器） | 未实测（预估 −3~8%） | 无（需谨慎） | ⚠️ 并入 P1/P6 |
 | P8 | 恒等 NFC 快路径 | NFC 相关 4.5% | ≤4.5%（未实测） | 仅当文本已 NFC 时等价 | ⚠️ 通用性差 |
@@ -124,3 +125,4 @@
 4. **P2 的分解**：`codegen-units=1` 与 `lto=fat` 各自贡献多少（两次构建 + 两次配对即可）。
 5. **P1 的延伸**：把每次调用的 316 KB 分配改成线程本地复用；以及给上游提"暴露无 offsets 编码 API"（把 P5 从 workaround 变成正式能力）。
 6. **发布策略**：与其做架构特化的 SVE 宽组（P10，负收益），不如发布"LTO + 合理 feature"的 wheel；若坚持多版本分发，按 CPU 能力分档比按 VL 分档更有意义。
+7. **P6（换分配器）应在目标机 aarch64 上验证**：.50 上没有现成 jemalloc/mimalloc，x86 数据对结论无参考价值。
