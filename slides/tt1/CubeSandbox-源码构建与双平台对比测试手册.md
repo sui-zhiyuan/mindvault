@@ -74,7 +74,7 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 两台机器上运行的 CubeSandbox 版本、沙箱规格、测试方法必须一致，否则测出的是配置差异而不是平台差异。第 2 篇列出必须对齐和必须记录的项。
 
-`checking_points.xlsx` 规定了本次测试必须满足的环境与版本。开始之前先从它读出目标规格，再按规格去准备机器；它一经确定不再被修改，整个测试过程中也不写入任何内容。性能结果单独归档，见 4.6。
+测试规格清单规定了本次测试必须满足的环境与版本。开始之前先从它读出目标规格，再按规格去准备机器。性能结果单独归档，见 4.6。
 
 ## 1.3 术语表
 
@@ -112,6 +112,8 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 ## 2.2 BIOS / 固件对照清单
 
+下表各项按测试规格清单设置。
+
 | 目标 | x86_64（AMD） | 鲲鹏 950 |
 |---|---|---|
 | 消除频率不确定性 | Determinism Control = Performance | Power Profile = Performance |
@@ -127,6 +129,8 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 鲲鹏侧的 Power Profile 与 Hardware Prefetcher **无法从操作系统读取**，必须导出 Redfish BIOS Attributes JSON 或拍摄 BIOS 截图归档。SMT 变更需要冷重启并重新规划 CPU 亲和性。
 
 ## 2.3 OS / 内核 / 大页 / NUMA 设置清单
+
+各项取值从测试规格清单获取。
 
 | 项目 | 要求 | 查看命令 |
 |---|---|---|
@@ -144,7 +148,7 @@ CubeSandbox 的 `.env` 中没有任何大页、NUMA 或 cpuset 变量，这些�
 
 ## 2.4 核对并归档机器证据
 
-两台机器在部署前各执行一次，用来核对本机是否满足 `checking_points.xlsx` 的规格，并把结果作为符合性证据归档：
+两台机器在部署前各执行一次，把输出与测试规格清单逐项比较，并把结果作为符合性证据归档：
 
 ```bash
 python3 collect_baseline.py --out baseline-$(uname -m).json
@@ -186,25 +190,6 @@ python3 collect_baseline.py --out baseline-$(uname -m).json
 # 第 3 篇　部署
 
 ## 3.0 部署总览
-
-### 3.0.1 读取测试规格
-
-`checking_points.xlsx` 规定了这次测试必须满足的环境与版本。它是先决条件，不是记录表：先读它，再按它去找或配置机器，而不是先测完再把实际值写进去。它一经确定不再修改，整个测试过程中也不写入任何内容。
-
-其中各项分别决定后面的做法：
-
-| 规格项 | 决定 |
-|---|---|
-| 测试版本（commit / tag） | 3.1.4 拉取哪个版本 |
-| 机型、核数、内存容量与速率 | 用哪台机器；2.2 与 2.3 的 BIOS 与系统设置 |
-| 内核版本、大页配置、NUMA 配置、超线程 | 2.3 的宿主机设置 |
-| BIOS 项（NUMA / 频率策略 / C-state / 虚拟化） | 2.2 |
-| 容器操作系统、镜像版本 | 4.1 的模板镜像 |
-| 并发档位与沙箱规格 | 4.0 的测试参数 |
-
-开始之前先确认手上的机器符合这些规格。不符合时（例如内存速率不是规格要求的频率）换一台符合的机器，或按规格调整配置；不要用不符合规格的机器测完再把实际值记录下来。
-
-### 3.0.2 部署流程
 
 ```
 3.1 构建机准备 ──► 3.2 准备 guest 内核 ──► 3.3 源码构建发布包
@@ -311,7 +296,7 @@ docker images | grep -E 'ubuntu|tencentos|coredns|mysql|redis|openresty|compose'
 
 ### 3.1.4 获取源码
 
-从 GitHub 拉取 `checking_points.xlsx` 中「测试版本」规定的 commit 或 tag，下面以 v0.7.1 为例。
+从测试规格清单查询「测试版本」，据此从 GitHub 拉取对应的 commit 或 tag，下面以 v0.7.1 为例。
 
 ```bash
 git clone --depth 1 --branch v0.7.1 \
@@ -564,7 +549,7 @@ ls -l /tmp/postinstall-$(uname -m).txt postinstall-$(uname -m).json
                             （4.5 可选：快照 / 密度）
 ```
 
-两台机器固定使用同一组参数：
+两台机器固定使用同一组参数，均从测试规格清单获取：
 
 | 参数 | 值 |
 |---|---|
@@ -588,7 +573,7 @@ sleep 30
 
 ## 4.1 建模板
 
-创建沙箱必须指定模板，后续所有测试都复用这一个模板。必须带 `--probe 49999`，否则容器虽然无法启动也会被判定为 READY。
+创建沙箱必须指定模板，后续所有测试都复用这一个模板，镜像从测试规格清单的镜像版本获取。必须带 `--probe 49999`，否则容器虽然无法启动也会被判定为 READY。
 
 ```bash
 cubemastercli tpl create-from-image \
@@ -690,7 +675,7 @@ awk 'NF>0 {print FILENAME, "columns:", NF}' /tmp/snapshot-$(uname -m).txt /tmp/r
 
 ## 4.6 结果记录与汇总
 
-测试结果只写到独立文件。`checking_points.xlsx` 是输入规格，整个测试过程中不写入任何内容。
+测试结果写到独立文件。
 
 ### 4.6.1 保存测试结果
 
@@ -823,4 +808,4 @@ systemctl is-enabled cube-sandbox-control.target; systemctl is-active cube-sandb
 
 收集内容：CPU 型号与 SKU、SMT 状态、NUMA 拓扑、内存与速率、页面大小与 THP、大页、内核与 cmdline、governor、漏洞缓解、KVM 与虚拟化能力、firmware/BIOS、磁盘与文件系统、Docker 版本与镜像 digest、已安装的 CubeSandbox 版本。
 
-脚本只读系统信息，不修改任何配置；缺少某个工具（如 `numactl`、`dmidecode`）时会在输出的 `_errors` 字段中记录，不影响其余字段采集。输出中的 `_fairness_highlights` 字段把最需要先比对的几项（架构、CPU 型号、SMT、NUMA 节点数、页大小、governor）单独抽出，便于与 `checking_points.xlsx` 的规格逐项核对，也便于两台机器并排比对。
+脚本只读系统信息，不修改任何配置；缺少某个工具（如 `numactl`、`dmidecode`）时会在输出的 `_errors` 字段中记录，不影响其余字段采集。输出中的 `_fairness_highlights` 字段把最需要先比对的几项（架构、CPU 型号、SMT、NUMA 节点数、页大小、governor）单独抽出，便于与测试规格清单逐项比较，也便于两台机器并排比对。
