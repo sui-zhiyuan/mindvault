@@ -390,7 +390,7 @@ python3 -m json.tool "$OUT/release-manifest.json" | head -30
 
 ### 3.4.1 安装前检查
 
-安装脚本自身会做这些检查，但提前发现比在安装中途失败代价低；其中端口占用安装脚本不会检查，必须在这里排查。以下命令输出的每一项结果决定 3.4.3 是否需要改端口、是否需要处理文件系统。
+安装脚本自身会做这些检查，但提前发现比在安装中途失败代价低；其中端口占用安装脚本不会检查，必须在这里排查。下面命令的输出直接给出每一项的结果，对照后面的表判断即可，结果决定 3.4.3 是否需要改端口、是否需要处理文件系统。
 
 ```bash
 ls -la /dev/kvm
@@ -405,14 +405,6 @@ for p in 3000 8082 8089 3010 3306 6379 9000 9001 80 443 9090 9091 12088 8083; do
   ss -lntp "( sport = :$p )" | tail -n +2 | sed "s/^/port $p: /"
 done
 ```
-
-验证：
-
-```bash
-ls /dev/kvm && echo KVM_OK; stat -fc %T /sys/fs/cgroup; df -T /data | tail -1
-```
-
-第一行应输出 `/dev/kvm` 与 `KVM_OK`；第二行应是 `cgroup2fs` 或 `tmpfs`（v1）；第三行应显示 `/data` 所在文件系统的类型。
 
 对照下表判断结果：
 
@@ -533,10 +525,10 @@ python3 collect_baseline.py --out postinstall-$(uname -m).json
 验证：
 
 ```bash
-curl -s http://127.0.0.1:3001/health; ls -l /tmp/postinstall-$(uname -m).txt postinstall-$(uname -m).json
+ls -l /tmp/postinstall-$(uname -m).txt postinstall-$(uname -m).json
 ```
 
-`curl` 应返回健康状态内容，`ls` 应显示两个归档文件存在且非空。若 `curl` 无输出，按 3.0 的完成判据逐项核对，未通过不要进入第 4 篇。
+应显示两个归档文件存在且非空。上面 `curl` 返回健康状态内容即为通过；若无输出，按 3.0 的完成判据逐项核对，未通过不要进入第 4 篇。
 
 ---
 
@@ -588,13 +580,7 @@ cubemastercli tpl watch --job-id <job_id>
 cubemastercli tpl list | tee /tmp/tpl-$(uname -m)-$(date +%H%M).txt
 ```
 
-验证：
-
-```bash
-cubemastercli tpl list | grep -i ready
-```
-
-应至少有一行状态为 `READY`，其第一列是 `tpl-` 开头的模板 ID，记下它作为后续的 `CUBE_TEMPLATE_ID`。若长时间没有 READY，用 `tpl watch` 查看卡在哪个阶段。
+`tpl list` 输出中状态为 `READY` 的那一行，其第一列就是 `tpl-` 开头的模板 ID，记下它作为后续的 `CUBE_TEMPLATE_ID`。若长时间没有 READY，用 `tpl watch` 查看卡在哪个阶段。
 
 ## 4.2 冒烟测试
 
@@ -609,13 +595,7 @@ cd examples/cube-bench && make
 ./bin/cube-bench -m create-only -n 1 -c 1 -w 0
 ```
 
-验证：
-
-```bash
-./bin/cube-bench -m create-only -n 1 -c 1 -w 0 --no-tui | grep -i 'success rate'
-```
-
-应输出 `Success Rate` 且为 `100.0%`。若失败，先查 cubelet 日志与模板状态，不要直接进入并发测试。
+命令输出的 `Success Rate` 应为 `100.0%`。若失败，先查 cubelet 日志与模板状态，不要直接进入并发测试。
 
 ## 4.3 创建延迟与并发扩展
 
@@ -658,13 +638,12 @@ pip install -r requirements.txt
 export CUBE_API_URL=http://127.0.0.1:3001
 export CUBE_TEMPLATE_ID=<模板ID>
 
-python3 bench_pause_resume_concurrency.py -c 10 -n 5
+python3 bench_pause_resume_concurrency.py -c 10 -n 5 | tee /tmp/pause-resume-$(uname -m).txt
 ```
 
 验证：
 
 ```bash
-python3 bench_pause_resume_concurrency.py -c 10 -n 5 --no-header | tee /tmp/pause-resume-$(uname -m).txt
 awk 'NF>0 {print "columns:", NF}' /tmp/pause-resume-$(uname -m).txt
 ```
 
@@ -675,18 +654,18 @@ awk 'NF>0 {print "columns:", NF}' /tmp/pause-resume-$(uname -m).txt
 需要这几项指标时，使用同一目录下的其它官方脚本，用法与 4.4 相同。
 
 ```bash
-python3 bench_snapshot_concurrency.py -c 10 -n 5
-python3 bench_rollback_concurrency.py -c 10 -n 5
-python3 bench_clone_concurrency.py    -c 10 -n 5
+python3 bench_snapshot_concurrency.py -c 10 -n 5 | tee /tmp/snapshot-$(uname -m).txt
+python3 bench_rollback_concurrency.py -c 10 -n 5 | tee /tmp/rollback-$(uname -m).txt
+python3 bench_clone_concurrency.py    -c 10 -n 5 | tee /tmp/clone-$(uname -m).txt
 ```
 
 验证：
 
 ```bash
-python3 bench_snapshot_concurrency.py -c 10 -n 5 --no-header | awk 'NF>0 {print "columns:", NF}'
+awk 'NF>0 {print FILENAME, "columns:", NF}' /tmp/snapshot-$(uname -m).txt /tmp/rollback-$(uname -m).txt /tmp/clone-$(uname -m).txt
 ```
 
-应打印一行且列数大于 0。快照类指标与页大小相关，两台机器的基础页大小若不同，需要按实际脏页字节数归一化后再比较。密度测试前，两边的 balloon 上报开关必须设成同值，否则内存开销不可比。
+应为三个文件各打印一行，列数均大于 0。快照类指标与页大小相关，两台机器的基础页大小若不同，需要按实际脏页字节数归一化后再比较。密度测试前，两边的 balloon 上报开关必须设成同值，否则内存开销不可比。
 
 ## 4.6 结果记录与汇总
 
@@ -706,7 +685,7 @@ python3 bench_snapshot_concurrency.py -c 10 -n 5 --no-header | awk 'NF>0 {print 
 | 内核版本 / 大页 / NUMA / 核数 | `baseline-<arch>.json` 与 `postinstall-<arch>.json` |
 | OS 版本 | `/etc/os-release` 与 `uname -r` |
 
-验证：
+其中机器环境项可以直接从归档的基线文件打印出来：
 
 ```bash
 python3 -c "
@@ -716,7 +695,7 @@ print(json.dumps(d['_fairness_highlights'], ensure_ascii=False, indent=2))
 "
 ```
 
-应打印出该机器的架构、CPU 型号、逻辑核数、SMT 状态、NUMA 节点数、页大小与 governor，可直接照此填入表中对应行。
+输出包含该机器的架构、CPU 型号、逻辑核数、SMT 状态、NUMA 节点数、页大小与 governor，照此填入表中对应行。
 
 ### 4.6.2 保存测试结果
 
