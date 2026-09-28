@@ -1,0 +1,159 @@
+{
+  "variants": [
+    "neon8",
+    "neon8-repeat"
+  ],
+  "rounds": 3,
+  "aa": true,
+  "cpu_set": [
+    240,
+    242,
+    244,
+    246,
+    248,
+    250,
+    252,
+    254
+  ],
+  "numa": 3,
+  "runs": [
+    {
+      "block": 0,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/00-neon8"
+      ],
+      "elapsed": 20.15897512435913
+    },
+    {
+      "block": 0,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/00-neon8-repeat"
+      ],
+      "elapsed": 20.351940631866455
+    },
+    {
+      "block": 1,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/01-neon8"
+      ],
+      "elapsed": 20.29095482826233
+    },
+    {
+      "block": 1,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/01-neon8-repeat"
+      ],
+      "elapsed": 20.088475704193115
+    },
+    {
+      "block": 2,
+      "variant": "neon8",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/02-neon8"
+      ],
+      "elapsed": 20.108164072036743
+    },
+    {
+      "block": 2,
+      "variant": "neon8-repeat",
+      "command": [
+        "python3",
+        "/home/wheel/hb/shared/scripts/run_with_vl.py",
+        "32",
+        "numactl",
+        "--physcpubind=240,242,244,246,248,250,252,254",
+        "--membind=3",
+        "/home/wheel/hb/wide/venv-neon8/bin/python",
+        "/home/wheel/hb/shared/standalone_tokenizer_repro/run_variants.py",
+        "--rounds",
+        "3",
+        "--warmup",
+        "10",
+        "--samples",
+        "30",
+        "--output-dir",
+        "/home/wheel/hb/wide/results/retest-aa/02-neon8-repeat"
+      ],
+      "elapsed": 20.219738483428955
+    }
+  ]
+}

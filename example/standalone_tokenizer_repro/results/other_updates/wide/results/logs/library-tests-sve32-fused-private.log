@@ -1,0 +1,157 @@
+   Compiling libc v0.2.189
+   Compiling crossbeam-utils v0.8.23
+   Compiling getrandom v0.3.4
+   Compiling zerocopy v0.8.57
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling crossbeam-deque v0.8.8
+   Compiling serde v1.0.229
+   Compiling rayon-core v1.13.0
+   Compiling allocator-api2 v0.2.21
+   Compiling either v1.18.0
+   Compiling fnv v1.0.7
+   Compiling equivalent v1.0.2
+   Compiling foldhash v0.2.0 (/root/hashbrown-sve-20260924/.rustup/toolchains/1.98.1-aarch64-unknown-linux-gnu/lib/rustlib/src/rust/library/vendor/foldhash-0.2.0)
+warning: direct cast of function item into an integer
+   --> /root/hashbrown-sve-20260924/.rustup/toolchains/1.98.1-aarch64-unknown-linux-gnu/lib/rustlib/src/rust/library/vendor/foldhash-0.2.0/src/seed.rs:152:35
+    |
+152 |         seed = mix(seed, func_ptr as usize as u64);
+    |                                   ^^^^^^^^
+    |
+    = note: `#[warn(function_casts_as_integer)]` on by default
+help: first cast to a pointer `as *const ()`
+    |
+152 |         seed = mix(seed, func_ptr as *const () as usize as u64);
+    |                                   ++++++++++++
+
+warning: `foldhash` (lib) generated 1 warning (run `cargo fix --lib -p foldhash` to apply 1 suggestion)
+   Compiling bumpalo v3.20.3
+   Compiling rayon v1.12.0
+   Compiling rand_core v0.9.5
+   Compiling serde_test v1.0.177
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling hashbrown v0.17.1 (/root/hashbrown-wide-20260924/hashbrown-tests)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.05s
+     Running unittests src/lib.rs (hashbrown-wide-20260924/target-library-tests/debug/deps/hashbrown-aa3594d35516d188)
+
+running 114 tests
+test control::tests::exact_masks_and_zero_counts ... ok
+test control::tests::load_at_guard_page ... ok
+test control::tests::loaded_group_is_a_snapshot ... ok
+test control::tests::private_scratch_backend_selected ... ok
+test control::tests::selected_backend_width ... ok
+test map::test_map::test_allocation_info ... ok
+test map::test_map::test_behavior_resize_policy ... ok
+test control::tests::fused_insert_scan_semantics ... ok
+test map::test_map::test_clone ... ok
+test map::test_map::test_clone_from ... ok
+test map::test_map::test_capacity_not_less_than_len ... ok
+test map::test_map::test_catch_panic_clone_from_when_len_is_equal ... ok
+test map::test_map::test_clone_memory_leaks_and_double_drop_one - should panic ... ok
+test map::test_map::test_clone_from_double_drop - should panic ... ok
+test map::test_map::test_catch_panic_clone_from_when_len_is_not_equal ... ok
+test map::test_map::test_clone_from_memory_leaks - should panic ... ok
+test map::test_map::test_conflict_remove ... ok
+test map::test_map::test_clone_memory_leaks_and_double_drop_two - should panic ... ok
+test map::test_map::test_const_with_hasher ... ok
+test map::test_map::test_create_capacity_zero ... ok
+test map::test_map::test_empty_entry ... ok
+test map::test_map::test_empty_entry_ref ... ok
+test map::test_map::test_empty_iter ... ok
+test map::test_map::test_empty_remove ... ok
+test map::test_map::test_entry ... ok
+test map::test_map::test_entry_and_replace_entry_with ... ok
+test map::test_map::test_drops ... ok
+test map::test_map::test_entry_ref ... ok
+test map::test_map::test_eq ... ok
+test map::test_map::test_expand ... ok
+test map::test_map::test_extend_ref_k_ref_v ... ok
+test map::test_map::test_extract_if ... ok
+test map::test_map::test_find ... ok
+test map::test_map::test_find_mut ... ok
+test map::test_map::test_from_iter ... ok
+test map::test_map::test_get_disjoint_mut ... ok
+test map::test_map::test_get_disjoint_mut_duplicate - should panic ... ok
+test map::test_map::test_hashmap_into_iter_bug ... ok
+test map::test_map::test_index ... ok
+test map::test_map::test_index_nonexistent - should panic ... ok
+test map::test_map::test_insert ... ok
+test map::test_map::test_insert_conflicts ... ok
+test map::test_map::test_insert_overwrite ... ok
+test map::test_map::test_extend_ref_kv_tuple ... ok
+test map::test_map::test_insert_unique_unchecked ... ok
+test map::test_map::test_into_keys ... ok
+test map::test_map::test_into_values ... ok
+test map::test_map::test_is_empty ... ok
+test map::test_map::test_iter_len ... ok
+test map::test_map::test_entry_take_doesnt_corrupt ... ok
+test map::test_map::test_iter_mut_len ... ok
+test map::test_map::test_keys ... ok
+test map::test_map::test_iterate ... ok
+test map::test_map::test_into_iter_drops ... ok
+test map::test_map::test_mut_size_hint ... ok
+test map::test_map::test_occupied_entry_key ... ok
+test map::test_map::test_occupied_entry_ref_key ... ok
+test map::test_map::test_occupied_entry_replace_entry_with ... ok
+test map::test_map::test_remove ... ok
+test map::test_map::test_remove_entry ... ok
+test map::test_map::test_entry_ref_take_doesnt_corrupt ... ok
+test map::test_map::test_show ... ok
+test map::test_map::test_retain ... ok
+test map::test_map::test_size_hint ... ok
+test map::test_map::test_vacant_entry_key ... ok
+test map::test_map::test_values_mut ... ok
+test map::test_map::test_vacant_entry_ref_key ... ok
+test map::test_map::test_values ... ok
+test map::test_map::test_try_reserve ... ok
+test map::test_map::test_zero_capacities ... ok
+test raw::test_map::insertion_small_table_wraparound ... ok
+test raw::test_map::test_drop_uninitialized ... ok
+test raw::test_map::test_drop_zero_items ... ok
+test map::test_map::test_reserve_shrink_to_fit ... ok
+test raw::test_map::test_prev_pow2 ... ok
+test raw::test_map::test_minimum_capacity_for_small_types ... ok
+test map::test_map::test_replace_entry_with_doesnt_corrupt ... ok
+test raw::test_map::test_catch_panic_clone_from ... ok
+test raw_entry::test_map::test_key_without_hash_impl ... ok
+test raw_entry::test_map::test_raw_entry_and_replace_entry_with ... ok
+test raw_entry::test_map::test_raw_entry ... ok
+test raw_entry::test_map::test_raw_occupied_entry_replace_entry_with ... ok
+test set::test_set::collect ... ok
+test set::test_set::duplicate_insert ... ok
+test set::test_set::test_allocation_info ... ok
+test set::test_set::some_invalid_equivalent - should panic ... ok
+test set::test_set::test_const_with_hasher ... ok
+test set::test_set::test_difference ... ok
+test set::test_set::test_disjoint ... ok
+test set::test_set::test_eq ... ok
+test set::test_set::test_extend_ref ... ok
+test set::test_set::test_extract_if ... ok
+test set::test_set::test_from_iter ... ok
+test set::test_set::test_from_map ... ok
+test set::test_set::test_intersection ... ok
+test set::test_set::test_move_iter ... ok
+test raw::test_map::rehash ... ok
+test set::test_set::test_iterate ... ok
+test set::test_set::test_replace ... ok
+test set::test_set::test_retain ... ok
+test set::test_set::test_show ... ok
+test raw::test_map::insertion_after_delete_preserves_later_duplicate_and_rehash ... ok
+test set::test_set::test_sub_assign ... ok
+test set::test_set::test_subset_and_superset ... ok
+test set::test_set::test_symmetric_difference ... ok
+test set::test_set::test_trivial_drain ... ok
+test set::test_set::test_union ... ok
+test set::test_set::test_zero_capacities ... ok
+test table::tests::test_allocation_info ... ok
+test set::test_set::test_drain ... ok
+test set::test_set::rehash_in_place ... ok
+test map::test_map_with_mmap_allocations::test_tiny_allocation_gets_rounded_to_page_size ... ok
+test control::tests::all_tags_unaligned_and_conversion ... ok
+test map::test_map::test_lots_of_insertions ... ok
+
+test result: ok. 114 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.53s
+

@@ -1,0 +1,38 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 7K of event 'cycles:u'
+# Event count (approx.): 22029737977
+#
+# Overhead Shared Object Symbol IPC [IPC Coverage]
+# ........ .................. ....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+13.38% libc.so.6 [.] _int_free - -
+10.30% libc.so.6 [.] malloc - -
+6.10% tokenizers.abi3.so [.] <hashbrown::raw::RawTable<(usize, usize)>>::reserve_rehash::<hashbrown::map::make_hasher<usize, usize, std::hash::random::RandomState>::{closure#0}> - -
+5.81% tokenizers.abi3.so [.] match_at - -
+5.57% tokenizers.abi3.so [.] <tokenizers::tokenizer::pre_tokenizer::BytesToCharOffsetConverter>::convert - -
+5.16% tokenizers.abi3.so [.] <hashbrown::map::HashMap<usize, usize, std::hash::random::RandomState>>::insert - -
+5.13% libc.so.6 [.] __memcpy_generic - -
+4.78% tokenizers.abi3.so [.] <std::hash::random::RandomState as core::hash::BuildHasher>::hash_one::<&usize> - -
+3.60% libc.so.6 [.] _int_malloc - -
+3.43% libc.so.6 [.] realloc - -
+2.63% tokenizers.abi3.so [.] <tokenizers::models::PyModel as tokenizers::tokenizer::Model>::tokenize - -
+2.44% tokenizers.abi3.so [.] <tokenizers::utils::cache::Cache<alloc::string::String, tokenizers::models::bpe::word::Word>>::get::<str> - -
+2.16% tokenizers.abi3.so [.] <alloc::vec::into_iter::IntoIter<(char, isize)> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::adapters::map::map_fold<(char, isize), char, (), <tokenizers::tokenizer::normalizer::NormalizedString>::transform_range<core::ops::range::RangeFull, alloc::vec::Vec<(char, isize)>>::{closure#1}, core::iter::traits::iterator::Iterator::for_each::call<char, <alloc::string::String as core::iter::traits::collect::Extend<char>>::extend<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<(char, isize)>, <tokenizers::tokenizer::normalizer::NormalizedString>::transform_range<core::ops::range::RangeFull, alloc::vec::Vec<(char, isize)>>::{closure#1}>>::{closure#0}>::{closure#0}>::{closure#0}> - -
+2.02% libc.so.6 [.] malloc_consolidate - -
+1.95% tokenizers.abi3.so [.] <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<u8>>, <tokenizers::pre_tokenizers::byte_level::ByteLevel as tokenizers::tokenizer::PreTokenizer>::pre_tokenize::{closure#1}::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<(char, isize), <alloc::vec::Vec<(char, isize)>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<u8>>, <tokenizers::pre_tokenizers::byte_level::ByteLevel as tokenizers::tokenizer::PreTokenizer>::pre_tokenize::{closure#1}::{closure#0}>>::{closure#0}>::{closure#0}> - -
+1.57% libc.so.6 [.] cfree@GLIBC_2.17 - -
+1.46% tokenizers.abi3.so [.] core::iter::adapters::flatten::and_then_or_clear::<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<tokenizers::tokenizer::Token>, <tokenizers::tokenizer::pre_tokenizer::PreTokenizedString>::into_encoding::{closure#2}::{closure#0}>, (u32, alloc::string::String, (usize, usize), core::option::Option<u32>, u32), <core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<tokenizers::tokenizer::Token>, <tokenizers::tokenizer::pre_tokenizer::PreTokenizedString>::into_encoding::{closure#2}::{closure#0}> as core::iter::traits::iterator::Iterator>::next> - -
+1.35% tokenizers.abi3.so [.] unicode_normalization_alignments::lookups::canonical_combining_class - -
+1.32% libc.so.6 [.] unlink_chunk.constprop.0 - -
+1.30% tokenizers.abi3.so [.] <tokenizers::tokenizer::pre_tokenizer::PreTokenizedString>::into_encoding - -
+1.08% tokenizers.abi3.so [.] <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::map::Map<core::slice::iter::Iter<tokenizers::models::bpe::word::Symbol>, <tokenizers::models::bpe::word::Word>::get_chars_iter::{closure#0}>, core::iter::adapters::map::Map<core::slice::iter::Iter<tokenizers::models::bpe::word::Symbol>, <tokenizers::models::bpe::word::Word>::get_offsets_iter::{closure#0}>>, <tokenizers::models::bpe::model::BPE>::word_to_tokens::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<tokenizers::tokenizer::Token, <alloc::vec::Vec<tokenizers::tokenizer::Token>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::map::Map<core::slice::iter::Iter<tokenizers::models::bpe::word::Symbol>, <tokenizers::models::bpe::word::Word>::get_chars_iter::{closure#0}>, core::iter::adapters::map::Map<core::slice::iter::Iter<tokenizers::models::bpe::word::Symbol>, <tokenizers::models::bpe::word::Word>::get_offsets_iter::{closure#0}>>, <tokenizers::models::bpe::model::BPE>::word_to_tokens::{closure#0}>>::{closure#0}>::{closure#0}> - -
+1.06% tokenizers.abi3.so [.] <unicode_normalization_alignments::decompose::Decompositions<core::str::iter::Chars> as core::iter::traits::iterator::Iterator>::next - -
+
+
+#
+# (Tip: To trace calls using Processor Trace use perf record -e intel_pt// ... ; perf script --call-trace. Then use perf script --time A-B --insn-trace to look at region of interest.)
+#
