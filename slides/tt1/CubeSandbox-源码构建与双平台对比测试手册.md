@@ -74,7 +74,7 @@ CubeSandbox 是腾讯云开源的 AI Agent 安全沙箱服务（Apache 2.0）。
 
 两台机器上运行的 CubeSandbox 版本、沙箱规格、测试方法必须一致，否则测出的是配置差异而不是平台差异。第 2 篇列出必须对齐和必须记录的项。
 
-数据最终填入 `checking_points.xlsx`，取值方式见 4.6。
+`checking_points.xlsx` 是本次测试的输入表，用于登记两台机器各自的版本与环境关键信息；性能结果单独归档，两者的取值方式见 4.6。
 
 ## 1.3 术语表
 
@@ -205,9 +205,9 @@ python3 collect_baseline.py --out baseline-$(uname -m).json
 |---|---|---|
 | 基线证据 JSON | 2.4 | 结果报告 |
 | `vmlinux` 及其 sha256 | 3.2 | 3.3 构建 |
-| `release-manifest.json`、`VERSION.txt` | 3.3 | 3.4 安装校验、4.6 填表 |
+| `release-manifest.json`、`VERSION.txt` | 3.3 | 3.4 安装校验、4.6 登记 |
 | 运行中的服务与端口 | 3.4 | 4.1～4.5 全部测试 |
-| 安装后指纹文件 | 3.5 | 4.6 填表、排查问题 |
+| 安装后指纹文件 | 3.5 | 4.6 登记、排查问题 |
 
 ## 3.1 构建机准备
 
@@ -255,29 +255,38 @@ docker --version && make --version | head -1 && git --version && python3 --versi
 
 应依次打印 docker、make、git、python3 的版本号，最后一行是 mke2fs 的版本。若某个命令报 `command not found`，说明该包未装上，需要按发行版补装；若 `mkfs.ext4` 版本过旧不支持 `-d`，guest 镜像生成会失败。
 
-### 3.1.3 预拉 builder 基座镜像
+### 3.1.3 预拉全部镜像
 
-builder 容器的 Dockerfile 第一行是 `FROM ubuntu:20.04`，来自 Docker Hub。网络无法访问 Docker Hub 时，`make builder-image` 会在拉取基座这一步失败。此处用 `skopeo` 从可达的镜像源把同一个镜像拉到本地，并打上 `ubuntu:20.04` 的原名标签，使 Dockerfile 无需修改即可命中本地镜像。guest 镜像的基座 `tencentos/tencentos4-minimal` 同理由 3.3 使用。
+构建与安装需要的镜像在这里一次性拉完，避免后续重复走网络。其中 builder 基座 `ubuntu:20.04` 与 guest 镜像基座 `tencentos/tencentos4-minimal` 供 3.3 编译使用，两者的 Dockerfile 直接引用这两个原名，因此拉取时必须打回同名标签；`mysql`、`redis`、`minio` 由 support 组件启动，供 CubeMaster 存元数据、缓存与对象存储；`coredns` 由 cube-proxy 启动，负责 `cube.app` 域名解析；`openresty` 是 WebUI 的 nginx 基座；`docker/compose:1.29.2` 是各 compose 包装脚本实际调用的容器，它来自 Docker Hub，最容易被漏掉。构建机与目标机为同一台时本步骤只做一次，分成两台时两台各需一份。
 
 ```bash
-ARCH=$(uname -m); case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; esac
-
-skopeo copy --override-arch "$A" \
-  "docker://<your-mirror>/ubuntu:20.04" \
+# 编译用基座镜像
+skopeo copy "docker://<your-mirror>/ubuntu:20.04" \
   "docker-daemon:ubuntu:20.04"
-
-skopeo copy --override-arch "$A" \
-  "docker://<your-mirror>/tencentos/tencentos4-minimal:latest" \
+skopeo copy "docker://<your-mirror>/tencentos/tencentos4-minimal:latest" \
   "docker-daemon:tencentos/tencentos4-minimal:latest"
+
+# 运行时镜像
+for img in \
+  "cube-sandbox-image.tencentcloudcr.com/opensource/coredns/coredns:1.14.2" \
+  "cube-sandbox-image.tencentcloudcr.com/opensource/mysql:8.0" \
+  "cube-sandbox-image.tencentcloudcr.com/opensource/redis:7-alpine" \
+  "cube-sandbox-image.tencentcloudcr.com/opensource/openresty:1.21.4.1-6-alpine-fat" \
+  ; do
+  skopeo copy "docker://$img" "docker-daemon:$img"
+done
+
+skopeo copy "docker://<your-mirror>/docker/compose:1.29.2" \
+  "docker-daemon:docker/compose:1.29.2"
 ```
 
 验证：
 
 ```bash
-docker images | grep -E 'ubuntu|tencentos'
+docker images | grep -E 'ubuntu|tencentos|coredns|mysql|redis|openresty|compose'
 ```
 
-应能看到 `ubuntu 20.04` 与 `tencentos/tencentos4-minimal latest` 两行。若一条都没有，说明镜像源地址不可用或架构参数不匹配；在 x86 构建机上为 aarch64 目标构建时，`--override-arch` 必须显式给出，否则会拉到错误架构。
+应能看到上面每一个镜像各一行。缺少哪个，对应的编译或安装阶段就会失败，补拉该镜像即可。
 
 ### 3.1.4 获取源码
 
@@ -375,13 +384,13 @@ cat "$OUT/VERSION.txt"
 python3 -m json.tool "$OUT/release-manifest.json" | head -30
 ```
 
-应打印出格式化的 JSON，且顶层能看到 `components`、`guest_image`、`kernel` 三个键。缺任一个键会导致 3.4.5 安装时报 `invalid release manifest`。
+应打印出格式化的 JSON，且顶层能看到 `components`、`guest_image`、`kernel` 三个键。缺任一个键会导致 3.4.4 安装时报 `invalid release manifest`。
 
 ## 3.4 目标机安装
 
 ### 3.4.1 安装前检查
 
-安装脚本自身会做这些检查，但提前发现比在安装中途失败代价低；其中端口占用安装脚本不会检查，必须在这里排查。以下命令输出的每一项结果决定 3.4.4 是否需要改端口、是否需要处理文件系统。
+安装脚本自身会做这些检查，但提前发现比在安装中途失败代价低；其中端口占用安装脚本不会检查，必须在这里排查。以下命令输出的每一项结果决定 3.4.3 是否需要改端口、是否需要处理文件系统。
 
 ```bash
 ls -la /dev/kvm
@@ -415,7 +424,7 @@ ls /dev/kvm && echo KVM_OK; stat -fc %T /sys/fs/cgroup; df -T /data | tail -1
 | bpffs | `/sys/fs/bpf` 类型为 `bpf` | eBPF 无法 pin |
 | cgroup | v2 需有 `cpu` 控制器；v1 直接通过 | 启动会失败 |
 | `/data` 所在 FS | XFS | 需要按 3.4.2 处理 |
-| 端口 | 空闲 | 按 3.4.4 改端口 |
+| 端口 | 空闲 | 按 3.4.3 改端口 |
 
 ### 3.4.2 准备磁盘布局
 
@@ -440,36 +449,7 @@ df -T /data && df -T /usr/local/services/cubetoolbox && xfs_info /data | grep re
 
 第一行应显示 `/data` 的类型为 `xfs`，第二行显示安装根已指向目标分区，第三行应输出 `reflink=1`。若第一行不是 xfs，说明 `/mnt/bss/cube-data` 所在分区不是 XFS，需要换一个 XFS 分区重新绑定。
 
-### 3.4.3 预拉运行时镜像
-
-发布包内不含任何镜像 tarball，所有运行时镜像都在目标机上拉取。这些镜像分别被安装脚本启动容器时使用：`mysql`、`redis`、`minio` 由 support 组件启动，供 CubeMaster 存元数据、缓存与对象存储；`coredns` 由 cube-proxy 启动，负责 `cube.app` 域名解析；`openresty` 作为 WebUI 的 nginx 基座；`docker/compose:1.29.2` 是各 compose 包装脚本实际调用的容器，注意它来自 Docker Hub，最容易被忽略。
-
-```bash
-ARCH=$(uname -m); case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; esac
-
-for img in \
-  "cube-sandbox-image.tencentcloudcr.com/opensource/coredns/coredns:1.14.2" \
-  "cube-sandbox-image.tencentcloudcr.com/opensource/mysql:8.0" \
-  "cube-sandbox-image.tencentcloudcr.com/opensource/redis:7-alpine" \
-  "cube-sandbox-image.tencentcloudcr.com/opensource/openresty:1.21.4.1-6-alpine-fat" \
-  ; do
-  skopeo copy --override-arch "$A" "docker://$img" "docker-daemon:$img"
-done
-
-skopeo copy --override-arch "$A" \
-  "docker://<your-mirror>/docker/compose:1.29.2" \
-  "docker-daemon:docker/compose:1.29.2"
-```
-
-验证：
-
-```bash
-docker images | grep -E 'coredns|mysql|redis|openresty|compose'
-```
-
-应能看到 coredns、mysql、redis、openresty、compose 各一行。缺少哪一个，安装阶段启动对应容器时就会失败，需要补拉该镜像。
-
-### 3.4.4 配置 `.env`
+### 3.4.3 配置 `.env`
 
 解压发布包并生成配置文件。端口、节点 IP、镜像区域、是否重启 Docker 等都由 `.env` 决定，其中 `ONE_CLICK_ENABLE_TENCENT_DOCKER_MIRROR` 一旦设为 `1`，安装脚本会改写 `/etc/docker/daemon.json` 并重启 Docker，共享服务器上会停掉所有 `RestartPolicy=no` 的容器，因此必须保持 `0`。
 
@@ -505,7 +485,7 @@ grep -E 'CUBE_API_BIND|CUBE_API_HEALTH_ADDR|CUBE_PROXY_ADMIN_PORT|CUBE_PVM_ENABL
 
 应能列出上面设置的各行；其中 `CUBE_API_BIND` 与 `CUBE_API_HEALTH_ADDR` 的端口必须一致，否则健康检查会失败。`ONE_CLICK_ENABLE_S3LVOL=0` 表示不创建约 512 GiB 的 WAL 镜像。
 
-### 3.4.5 运行安装
+### 3.4.4 运行安装
 
 安装脚本完成解压组件、写配置、安装 systemd unit、启动服务与健康检查的全过程。
 
@@ -526,7 +506,7 @@ tail -20 /var/log/cube-install-$(uname -m).log
 | 现象 | 原因 | 处理 |
 |---|---|---|
 | 提示 `/data/cubelet` 不是 XFS | 3.4.2 未做 | 回到 3.4.2 |
-| `port ... already in use` | 端口冲突 | 回到 3.4.4 改端口 |
+| `port ... already in use` | 端口冲突 | 回到 3.4.3 改端口 |
 | `invalid release manifest` | manifest 结构不符 | 检查 3.3.3 |
 | DNS preflight 失败 | 缺少 resolvectl 或 NetworkManager | 装 dnsmasq 或设 `CUBE_PROXY_DNSMASQ_MODE=standalone` |
 
@@ -710,10 +690,41 @@ python3 bench_snapshot_concurrency.py -c 10 -n 5 --no-header | awk 'NF>0 {print 
 
 ## 4.6 结果记录与汇总
 
-把 3 轮结果汇总，并把版本与环境信息填入 `checking_points.xlsx`。
+`checking_points.xlsx` 是本次测试的输入表，用来登记两台机器各自是在什么版本与什么环境下测的；压测产出的性能数据不属于这张表，另存为独立文件。两者分开保存：前者说明数据的来源，后者是数据本身。
+
+### 4.6.1 回填 `checking_points.xlsx`
+
+表中各项按下面的来源填写，两台机器各填一列。
+
+| 表格行 | 取值来源 |
+|---|---|
+| 测试版本（commit / tag） | `git describe` 与 `git rev-parse HEAD` |
+| CubeSandbox repo 版本 | `release-manifest.json` 的 `release_version` |
+| docker / docker-compose 版本 | `docker --version`、`docker-compose --version` |
+| 镜像版本 | `release-manifest.json` 各组件 version 与 digest；`docker images --digests` |
+| guest 镜像 / 内核 | `release-manifest.json` 的 `guest_image`、`kernel` |
+| 内核版本 / 大页 / NUMA / 核数 | `baseline-<arch>.json` 与 `postinstall-<arch>.json` |
+| OS 版本 | `/etc/os-release` 与 `uname -r` |
+
+验证：
 
 ```bash
-python3 - <<'EOF'
+python3 -c "
+import json
+d=json.load(open('baseline-$(uname -m).json'))
+print(json.dumps(d['_fairness_highlights'], ensure_ascii=False, indent=2))
+"
+```
+
+应打印出该机器的架构、CPU 型号、逻辑核数、SMT 状态、NUMA 节点数、页大小与 governor，可直接照此填入表中对应行。
+
+### 4.6.2 保存测试结果
+
+把 3 轮的压测结果汇总，写到独立的结果文件里，不写进输入表。
+
+```bash
+OUT=/tmp/bench-summary-$(uname -m).txt
+python3 - <<'EOF' | tee "$OUT"
 import json, glob, statistics as st
 for arch_dir in sorted(glob.glob('/tmp/bench-*')):
     avgs, p95s, rates, tps = [], [], [], []
@@ -734,21 +745,10 @@ EOF
 验证：
 
 ```bash
-ls /tmp/bench-*/create-c100-r*.json | wc -l
+ls -l /tmp/bench-summary-*.txt && ls /tmp/bench-*/create-c100-r*.json | wc -l
 ```
 
-应输出 6（两个架构目录各 3 个）。若不足 6，说明某一轮未产出报告，需要补跑。
-
-各字段的取值来源：
-
-| 表格行 | 取值来源 |
-|---|---|
-| 测试版本（commit / tag） | `git describe` 与 `git rev-parse HEAD` |
-| CubeSandbox repo 版本 | `release-manifest.json` 的 `release_version` |
-| docker / docker-compose 版本 | `docker --version`、`docker-compose --version` |
-| 镜像版本 | `release-manifest.json` 各组件 version 与 digest；`docker images --digests` |
-| guest 镜像 / 内核 | `release-manifest.json` 的 `guest_image`、`kernel` |
-| 内核版本 / 大页 / NUMA / 核数 | `baseline-<arch>.json` 与 `postinstall-<arch>.json` |
+第一行应显示每台机器的汇总文件存在且非空，第二行应输出 6（两个架构目录各 3 个报告）。若不足 6，说明某一轮未产出报告，需要补跑。
 
 报告比值时必须附上第 2 篇的硬件与固件对照表。若轮间极差超过 20%，先排查环境稳定性。
 
@@ -760,6 +760,25 @@ ls /tmp/bench-*/create-c100-r*.json | wc -l
 - [ ] 模板 ID 已更新，构建顺序已记录
 - [ ] 并发档位、`-n`、`-w 3` 与另一台机器完全一致
 - [ ] 本轮 JSON 已落盘并归档
+
+## 4.8 测试完成后停机
+
+安装脚本把这些 systemd 单元设为开机自启并常驻运行，测试结束后若只停不取消自启，Cubelet 与各容器仍会占用 CPU 与内存，机器重启后也会自动拉起。这一步同时取消自启并停止服务，把资源让给同机的其它工作。
+
+```bash
+cd <解压后的包目录>
+./down.sh
+systemctl disable cube-sandbox-control.target
+systemctl disable cube-sandbox-s3lvol.service 2>/dev/null || true
+```
+
+验证：
+
+```bash
+systemctl is-enabled cube-sandbox-control.target; systemctl is-active cube-sandbox-control.target; docker ps --filter name=cube-sandbox --format '{{.Names}}' | wc -l
+```
+
+三行输出应依次为 `disabled`、`inactive`、`0`。若第一行仍是 `enabled`，说明自启未取消，重启后会再次占用 CPU 与内存；若第三行不为 0，用 `docker ps --filter name=cube-sandbox` 查出残留容器并单独处理。
 
 ---
 
@@ -780,7 +799,6 @@ ls /tmp/bench-*/create-c100-r*.json | wc -l
 | 中断控制器 | x2APIC / IOAPIC | GICv3/GICv4 + ITS |
 | 深度空闲 | Global C-state Control | LPI = Off |
 | 互联相关 | 无对应项 | UFS = Off |
-| skopeo 架构覆盖 | `--override-arch amd64` | `--override-arch arm64` |
 | 一键脚本 | 自动发现 | `online-install.sh` 不自动发现 ARM64 |
 
 ## 5.2 版本钉死清单

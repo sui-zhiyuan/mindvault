@@ -22,7 +22,7 @@
 
 | # | 事项 | 不确定性来源 | 影响 | 验证方法 | 不成立的后果 |
 |---|---|---|---|---|---|
-| B1 | 腾讯 CR 或其它可达镜像源是否存在 **`ubuntu:20.04`** | ⚠️ 手册按「用 skopeo 从可达源拉取后打本地 tag」给出，但未确认任何具体镜像源里有该镜像 | 3.1.3 无法完成，`make builder-image` 失败 | `skopeo inspect --override-arch amd64 docker://<mirror>/ubuntu:20.04` | 需改用其它 Ubuntu 20.04 镜像源，或改 `docker/Dockerfile.builder` 第一行（偏离上游，需注明） |
+| B1 | 腾讯 CR 或其它可达镜像源是否存在 **`ubuntu:20.04`** | ⚠️ 手册按「用 skopeo 从可达源拉取后打本地 tag」给出，但未确认任何具体镜像源里有该镜像 | 3.1.3 无法完成，`make builder-image` 失败 | `skopeo inspect docker://<mirror>/ubuntu:20.04` | 需改用其它 Ubuntu 20.04 镜像源，或改 `docker/Dockerfile.builder` 第一行（偏离上游，需注明） |
 | B2 | 是否存在 **`tencentos/tencentos4-minimal`** 与 **`docker/compose:1.29.2`** 的可达副本 | ⚠️ 同上，两者都在 Docker Hub | guest 镜像构建失败；或安装阶段 compose 容器起不来 | `skopeo inspect docker://<mirror>/docker/compose:1.29.2` | 需为这两个镜像另找来源 |
 | B3 | `deploy/release-assets.yaml` 在 **v0.7.1** tag 下钉死的 kernel / guest-image tag 具体值 | ⚠️ 手册用命令从该文件读取，未写死值（master 上是 `kernel-release-260921-1` 与 `guest-image-260820-1`，v0.7.1 可能不同） | 内核与 guest 镜像版本可能与 manifest 不符 | clone 后 `cat deploy/release-assets.yaml` | 需按实际值调整 3.2.1 |
 | B4 | 各发行版上 `docker` / `skopeo` / `pigz` / `e2fsprogs` 的**包名**是否如手册所写 | ⚠️ 手册按常见命名给出，未在 openEuler 24.03 实测 | 3.1.2 安装失败 | 直接执行 3.1.2 命令，看是否有 `No match for argument` | 逐个查 `dnf search` 改包名 |
@@ -34,13 +34,13 @@
 
 | # | 事项 | 不确定性来源 | 影响 | 验证方法 | 不成立的后果 |
 |---|---|---|---|---|---|
-| C1 | **bind mount 绕过只读安装根**是否可行 | ✅ 源码确认 `CUBE_SANDBOX_INSTALL_ROOT` 被强制覆盖并 `readonly`（`lib/common.sh:9-12`）；⚠️ 但手册给出的 bind mount 解法**上游未支持也未测试** | 3.4.2 是手册的关键变通，若无效则安装根无法改位置 | 3.4.2 执行后 `df -T /usr/local/services/cubetoolbox` 确认指向目标分区，再跑 3.4.5 | 若安装脚本检测到异常或写入失败，需要另找方案（如把根分区扩容） |
+| C1 | **bind mount 绕过只读安装根**是否可行 | ✅ 源码确认 `CUBE_SANDBOX_INSTALL_ROOT` 被强制覆盖并 `readonly`（`lib/common.sh:9-12`）；⚠️ 但手册给出的 bind mount 解法**上游未支持也未测试** | 3.4.2 是手册的关键变通，若无效则安装根无法改位置 | 3.4.2 执行后 `df -T /usr/local/services/cubetoolbox` 确认指向目标分区，再跑 3.4.4 | 若安装脚本检测到异常或写入失败，需要另找方案（如把根分区扩容） |
 | C2 | 目标机**端口占用**实际情况 | ⚠️ 手册示例假设 3000 与 8082 被占用 | 端口冲突会让 unit 启动失败 | 3.4.1 的 `ss -lntp` 循环 | 按实际占用改 `.env` |
 | C3 | **DNS preflight** 是否通过 | ✅ 源码确认需要 `resolvectl`，或 NetworkManager 已加载，或 `CUBE_PROXY_DNSMASQ_MODE=standalone`；⚠️ 目标机实际具备哪一个未确认 | 安装中断 | 3.4.1 中检查 `systemctl show -p LoadState --value NetworkManager` 与 `which resolvectl` | 需要装 dnsmasq 或改 standalone 模式 |
 | C4 | 目标机 **cgroup 版本**及运行时 `cpuset` 控制器是否可用 | ✅ 源码确认安装脚本在 cgroup v2 下只检查 `cpu` 控制器；运行时还需要 `memory` 与 `cpuset`（诊断脚本 `scripts/cube-diag/check-deps.sh` 会检查） | cgroup v1 下能否安装、以及能否做 CPU 绑定未确认 | 3.4.1 中 `stat -fc %T /sys/fs/cgroup` 与 `cat /sys/fs/cgroup/cgroup.controllers` | v1 环境可能缺 `cpuset`，影响任何 CPU 绑定的压测 |
 | C5 | **Docker 版本**能否运行 `docker/compose:1.29.2` 容器 | ⚠️ 手册要求保持既有 Docker 不重启；若目标机 Docker 版本较旧（如 18.09），能否正常跑该 compose 容器未确认 | 安装阶段各 compose 包装脚本失败 | 3.4.3 完成后 `docker run --rm docker/compose:1.29.2 version` | 需升级 Docker（但共享服务器上不可接受），或改用其它 compose 方式 |
 | C6 | 目标机 `/data` 与安装根**容量是否足够** | ⚠️ 未实测 | 安装中途 ENOSPC | 3.4.1 的 `df -hT` | 需换分区或清理 |
-| C7 | `install.sh` 能否一次通过全部 preflight | ⚠️ 首次安装可能有未知 preflight 失败 | 安装中断 | 3.4.5 后查看日志末尾 | 按日志提示逐项处理后重跑 |
+| C7 | `install.sh` 能否一次通过全部 preflight | ⚠️ 首次安装可能有未知 preflight 失败 | 安装中断 | 3.4.4 后查看日志末尾 | 按日志提示逐项处理后重跑 |
 
 ## D. 公平性基线（第 2 篇）
 
