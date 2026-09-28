@@ -2,6 +2,8 @@
 
 > 生成：2026-09-28
 > 对象负载：`example/standalone_tokenizer_repro`（Qwen2.5-0.5B fast tokenizer，batch=1，58,834 字符 / 78,960 字节 / 25,600 tokens）
+> **范围声明**：优化目标只有 **aarch64 生产环境**（`192.168.41.50`）。目录中的 x86 数值**仅是"原始案例 aarch64 比 x86 慢 39%"这一对照所需**，以及用于排除工具链污染的机制验证；**本轮不追求也不评估 x86 侧的优化量**。
+>
 > 本目录**自成一体**：所有结论、原始数据、脚本、日志都在这里，不依赖 `results/other_updates/`（那里是他人归档的 SVE 宽组实验，本目录只把它当作被复现/被证伪的对象）。
 
 ## 一句话结论
@@ -16,6 +18,7 @@
 | `02_OPTIMIZATION_REPORT.md` | 完整优化报告（10 章：基线、方法、成本结构、方案细节、证据链、复现、产物） |
 | `03_COST_STRUCTURE.md` | 成本结构：两台机器 perf 剖析对照 + inclusive 结构 + 归因推理 |
 | `04_MEASUREMENTS.md` | 全部实测数字汇总（ARM / x86 / 微测 / 等价性 / 校验链） |
+| `05_PROVENANCE.md` | **出处与归属**：哪些来自他人归档、哪些由本轮提出并验证 |
 | `patch/pre_tokenizer_vec.patch` | 方案 P1 的补丁（单文件 46 行） |
 | `scripts/local/` | x86 侧基准与等价性脚本（可直接跑） |
 | `scripts/remote/` | .50 上的构建/运行/统计脚本（含参数化构建脚本） |
