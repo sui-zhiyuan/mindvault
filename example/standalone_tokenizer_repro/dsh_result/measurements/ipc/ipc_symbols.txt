@@ -1,0 +1,32 @@
+perf record -c 1000000 -e cycles:u / -e instructions:u  （同一负载、同一进程形态）
+样本数 cycles=41739 instructions=93062；下表 IPC = instr_samples/cycle_samples（周期相同，故等于事件数之比）
+
+函数                                            cycles%    IPC   instr%
+_int_free                                      12.21%   1.70    9.30%
+malloc                                         12.04%   2.00   10.83%
+_RNvMs4_NtNtCs2aXi3yCylVC_10tokenizers9tok      4.92%   1.47    3.25%
+_RINvMs6_NtCs59P7i4AZbtB_9hashbrown3rawINt      4.86%   2.46    5.37%
+match_at                                        4.68%   3.16    6.63%
+__memcpy_generic                                4.57%   3.01    6.16%
+_int_malloc                                     4.56%   1.77    3.62%
+_RNvMs1_NtCs59P7i4AZbtB_9hashbrown3mapINtB      4.49%   1.80    3.64%
+_RINvYNtNtNtCs3WUJacVYIcJ_3std4hash6random      3.93%   1.58    2.78%
+malloc_consolidate                              3.50%   1.09    1.71%
+unlink_chunk.constprop.0                        3.40%   1.75    2.67%
+[unknown]                                       2.78%   2.12    2.64%
+realloc                                         2.53%   2.59    2.94%
+_RINvNtNtNtCsguQCY3MhPbu_4core4iter8adapte      2.23%   1.23    1.23%
+_RINvMs0_NtNtCs2aXi3yCylVC_10tokenizers5ut      2.00%   1.78    1.60%
+_RNvXs_NtCs34m5fRw7PmA_10tokenizers6models      1.97%   2.05    1.82%
+
+分类                            cycles%    IPC   instr%
+glibc 分配器                      40.83%   1.86   34.06%
+tokenizers 其它(Rust)            13.92%   2.75   17.18%
+hashbrown/哈希                   13.85%   1.96   12.17%
+tokenizer 编码主体                  8.40%   1.53    5.76%
+Oniguruma 正则                    6.08%   3.23    8.81%
+Unicode 规范化                     4.98%   4.18    9.34%
+memcpy/memset                   4.68%   2.97    6.24%
+CPython 解释器/对象分配                4.03%   2.30    4.16%
+BPE/词缓存                         2.76%   1.60    1.98%
+libc 其它                         0.41%   1.37    0.25%
