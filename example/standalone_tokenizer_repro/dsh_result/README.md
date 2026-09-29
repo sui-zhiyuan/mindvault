@@ -19,6 +19,7 @@
 | `03_COST_STRUCTURE.md` | 成本结构：两台机器 perf 剖析对照 + inclusive 结构 + 归因推理 |
 | `04_MEASUREMENTS.md` | 全部实测数字汇总（ARM / x86 / 微测 / 等价性 / 校验链） |
 | `05_PROVENANCE.md` | **出处与归属**：哪些来自他人归档、哪些由本轮提出并验证 |
+| `06_IPC_ANALYSIS.md` | **IPC 实测与限速原因分析**（stock 负载；含按函数 IPC 归因、微基准分区域 IPC） |
 | `patch/pre_tokenizer_vec.patch` | 方案 P1 的补丁（单文件 46 行） |
 | `scripts/local/` | x86 侧基准与等价性脚本（可直接跑） |
 | `scripts/remote/` | .50 上的构建/运行/统计脚本（含参数化构建脚本） |

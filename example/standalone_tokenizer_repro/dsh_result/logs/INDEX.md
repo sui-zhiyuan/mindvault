@@ -33,6 +33,14 @@
 | `VARIANT_FLAGS.md` | **各变体的精确 RUSTFLAGS / Cargo profile / 源码**（复现必读） |
 | `b-v1.log` / `b-v2.log` / `b-v3.log` | v1-native / v2-feat / v3-featvl 的构建日志（v3 含唯一的 LLVM 后端参数） |
 
+## IPC 测量（详见 `06_IPC_ANALYSIS.md`）
+
+| 文件 | 内容 |
+|---|---|
+| `../measurements/ipc/` | perf stat 原始计数、双事件采样数据、按函数 IPC 归因输出 |
+| `../scripts/remote/perf_loop.sh` | 一键复测（三组 perf stat + 扣启动段） |
+| `../scripts/remote/ipc_agg.py` | 双事件按符号聚合 IPC |
+
 ## 环境搭建（要点，日志未全量保留）
 
 - 私有工具链：`rustup toolchain install 1.98.1 --profile minimal --component rust-src`（走 rsproxy 镜像），随后整份拷贝到 `~/hb/toolchain-1.98.1` 以**彻底脱离 rustup**——因为 rustup 管理的副本在并发/被中断的安装下损坏过两次，且 shim 会触发慢速在线补装，污染构建。
