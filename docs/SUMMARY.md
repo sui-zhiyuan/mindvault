@@ -15,6 +15,7 @@
   - [AgentENV vs CubeSandbox 架构对比](rust-kunpeng/agentenv-cubesandbox-comparison.md)
   - [Daft Kunpeng 性能优化设计](rust-kunpeng/daft-kunpeng-perf-design-spec.md)
   - [Daft Kunpeng 总体设计需求分析](rust-kunpeng/daft-kunpeng-overall-design.md)
+  - [Daft Kunpeng 设计描述：多模态算子库与 Lance 算子下推](rust-kunpeng/daft-kunpeng-design-descriptions.md)
   - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
   - [Pipeline B：MinHash-LSH 模糊去重](rust-kunpeng/pipeline-b-minhash-lsh.md)
   - [Daft 项目最新动态](rust-kunpeng/daft-latest-developments.md)
