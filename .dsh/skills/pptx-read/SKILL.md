@@ -16,7 +16,7 @@ whenToUse: 用户提到"读取/打开这个 ppt"、"PPT 里写了什么"、"总�
 ## 硬性约束
 
 1. **只读，永不写入原文件。** 脚本先把源文件复制到 Windows 临时目录，再以 `ReadOnly` 打开。任何"改 PPT"的需求都不属于本技能。
-2. **不装任何东西。** COM 路径零依赖；`--dump` 用 `uv run --with python-pptx` 临时拉取，装到 `.dsh.local/uv-cache`（已 gitignore），不污染系统 Python。
+2. **不装任何东西。** COM 路径零依赖；`--dump` 用 `uv run --with python-pptx` 临时拉取，装到 `.dsh.local/uv-cache`（已 gitignore），不污染系统 Python。**每个外部调用都必须有超时**：PowerShell 一步（`--timeout`）和 `uv` 一步（`--net-timeout`）都是——被阻塞的调用没有超时就会无声挂死整轮运行。
 3. **PNG 是给眼睛的，text.md 是给上下文的。** 先读 `text.md` 建立全局理解，**只对真正需要看版式/图表/配图的页**调 `read_image`。一份 20+ 页的 deck 全量读图会吃掉大量上下文——这是本技能最容易犯的错。
 4. **不修改仓库。** 渲染产物默认留在 Windows 临时目录；只有显式给 `--out` 才复制进工作区。
 5. **绝不打扰用户已经打开的 PowerPoint。** `PowerPoint.Application` 是**单实例** COM 服务器——用户开着 PowerPoint 时，`New-Object -ComObject PowerPoint.Application` 会**附着到用户那个实例上**，而不是新建一个。所以：只关自己打开的那一份、**只在实例是自己启动时才 `Quit()`**。违反这条的后果是用户的 PowerPoint 被关掉，或留下一个无窗口实例让用户"再也打不开自己的 ppt"。细节见下文「副本、轮次清理与实例隔离」。
@@ -63,6 +63,31 @@ slides/演示.pptx                 -> deck-7971155b1b.pptx
 
 因此输出里出现 `POWERPOINT_WAS_RUNNING=1` 与 `LEFT_USER_POWERPOINT_RUNNING=1` 都是**预期行为**，不是错误——它表示"你当时开着 PowerPoint，我借用了它，并且没有关掉它"。
 
+## 先看环境：`--check`
+
+读之前先确认三件事：PowerShell 能不能调到、interop 开没开、PowerPoint 现在开着什么。
+
+```bash
+.dsh/skills/pptx-read/scripts/read_pptx.sh --check
+```
+
+它只读地把 COM 附着到 PowerPoint（**绝不 `Quit()`**，也不打开/关闭任何文稿），然后报告：
+
+```
+distro=Ubuntu
+powershell=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+interop=enabled (enabled)
+appendWindowsPath=false
+uv=uv 0.11.8 (x86_64-unknown-linux-gnu)
+app_version=16.0
+app_visible=msoTrue
+presentations=1
+open=language_summary.pptx saved=0 readonly=0
+```
+
+- `appendWindowsPath=false`（本机就是）时 Windows 的 exe 不在 PATH 上，脚本会退到绝对路径，并把实际用的那一条打出来；
+- `open=` 那几行是**排障关键**：一次被超时杀掉的运行可能在用户的 PowerPoint 里留下隐藏副本（`deck-<slug>.pptx`），这里能看见；`saved=0` 表示用户那份文稿有未保存改动，渲染前最好先让他存档。
+
 ## 快速开始
 
 ```bash
@@ -102,6 +127,11 @@ copy : /mnt/c/Users/.../Temp/pptx-read/<slug>/deck-<slug>.pptx
 | `--dump` | 额外跑 python-pptx 结构化 dump：形状名/类型、`pt` 坐标尺寸、表格逐格、**演讲者备注** |
 | `--out DIR` | 把 `text.md` 和 PNG 复制到工作区某目录（`DIR/text.md`、`DIR/png/`） |
 | `--width/--height` | 渲染尺寸，默认 1600×900 |
+| `--timeout SEC` | PowerPoint 一步的超时，默认 180（`PPTX_TIMEOUT`） |
+| `--net-timeout SEC` | `uv` 一步的超时，默认 90（`PPTX_NET_TIMEOUT`） |
+| `--check` | 只报告环境（PowerShell / interop / uv / PowerPoint），不做任何读取 |
+
+退出码：`2` 用法或文件不存在，`3` PowerPoint 看不到源文件，`4` PowerShell/COM 失败或超时，`5` `--dump` 一步失败或超时。
 
 ## 两条路径，何时用哪条
 
@@ -138,7 +168,7 @@ grep -A20 'TABLE' "$TEXT_MD"
 
 1. **非 ASCII 路径必须 base64 走 argv。** Windows PowerShell 以 ANSI 代码页接收命令行参数，中文路径会乱码。脚本把 Windows 路径编码成 `base64(UTF-8)`（纯 ASCII）传入 `-SrcB64`，PowerShell 侧解码。
 2. **`render_pptx.ps1` 必须保持纯 ASCII。** PowerShell 5.1 把无 BOM 的 `.ps1` 当 ANSI 读，文件里任何中文字面量都会损坏。所有中文只出现在 `text.md` 里（运行时用 `UTF8Encoding` 显式写出），不要写进脚本。
-3. **脚本经 UNC 路径执行。** `powershell.exe -File '\\wsl.localhost\<distro>\...\render_pptx.ps1'`——已验证可用，因此不需要把脚本复制到 Windows 侧。
+3. **脚本经 UNC 路径执行，但 PowerShell 不能只按名字找。** `-File '\\wsl.localhost\<distro>\...\render_pptx.ps1'` 这条路是对的，因此不需要把脚本复制到 Windows 侧；然而 `/etc/wsl.conf` 里的 `[interop] appendWindowsPath = false`（本机就是）会让 `powershell.exe` 不在 PATH 上，而 `$(powershell.exe ... 2>&1 || true)` 会把 `command not found` 悄悄吞掉，让整轮运行退化成"什么都没做、也不报错"。脚本现在按 **名字 → 绝对路径**（`/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe`）解析，两者都找不到就**明确报错退出**；`PPTX_POWERSHELL` 可直接指定。
 4. **`UV_CACHE_DIR` 必须重定向。** 沙箱下 `~/.cache/uv` 只读；脚本指向 `<repo>/.dsh.local/uv-cache`。
 5. **每轮清空 scratch root。** 运行一开始就删掉整个 `%TEMP%\pptx-read`，而不只是 workDir 里的 `*.PNG`/`*.pdf`——上一轮的**副本**同样必须清掉。
 6. **实例所有权决定要不要 `Quit()`。** 创建 COM **之前**先探测 `Get-Process POWERPNT`；**只有本次运行自己启动了 PowerPoint 才 `Quit()`**，否则原样留着（那是用户的）。无脑 `Quit()` 会连用户正在编辑的文稿一起关掉。
@@ -152,11 +182,12 @@ grep -A20 'TABLE' "$TEXT_MD"
 - **bash 不能写 `/mnt/c`**（只读挂载/沙箱）。Windows 侧的一切落盘都必须由 PowerShell 完成；WSL 侧只能读 `/mnt/c`。
 - **PowerPoint 是单实例的。** 用户开着 PowerPoint 时脚本会**借用**那个实例（`POWERPOINT_WAS_RUNNING=1`），这是正常的；但这也意味着脚本运行期间用户的 PowerPoint 里会短暂多出一份隐藏文稿。
 - **WSL 新建路径经 `\\wsl.localhost` 有可见性延迟。** 刚 `cp` 出来的文件可能马上被 Windows 判为不存在（`ERR_NO_SOURCE`），稍后重试即可。源文件放在工作区等长期存在的路径不受影响。
-- **PowerPoint 会弹窗阻塞**。脚本已设 `DisplayAlerts`（并在归还实例时还原），但若某份 deck 触发修复提示仍可能卡住——超时后检查是否有残留 POWERPNT 进程。
-- **首次 `--dump` 需要联网**下载 python-pptx；之后走缓存。
+- **PowerPoint 会弹窗阻塞**。脚本已设 `DisplayAlerts`（并在归还实例时还原），但若某份 deck 触发修复提示仍可能卡住；现在 `--timeout` 到点会杀掉 PowerShell 一步并给出诊断（exit 4），而不是无限等。**被杀掉的那一轮不会执行 `.ps1` 的 `finally`**，可能留一份隐藏副本（`deck-<slug>.pptx`）在用户的 PowerPoint 里——用 `--check` 看 `presentations=` / `open=` 确认；用户自己那份文稿不要动。
+- **首次 `--dump` 需要联网**下载 python-pptx；之后走缓存。pypi 这条链路可能极慢或时通时断，`uv` 会顺着它卡很久，所以这一步有 `--net-timeout`（默认 90s，超时 exit 5）。
 
 ## 自检
 
+0. 先跑 `--check`：`powershell=` 有路径、`interop=enabled`、`presentations=` 与运行前一致（没有多出隐藏副本）；
 1. `SLIDES=` 的数字与 `ls <png>/Slide*.PNG | wc -l` 一致；
 2. `text.md` 用 `file` 确认是 `UTF-8`**且不含 CRLF**，抽查中文不是乱码；
 3. 严格分页匹配能取到页（`awk '/^## Slide 1$/'` 有输出）；
