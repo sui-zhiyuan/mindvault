@@ -83,11 +83,16 @@ $pres = $null
 $origAlerts = $null
 try {
   $app = New-Object -ComObject PowerPoint.Application
+  # A status line per step, because a call that BLOCKS never reaches the catch
+  # below: the wrapper kills this process and the last line printed is the only
+  # record of how far it got.
+  Write-Output 'STATUS=COM_ATTACHED'
   # When we borrowed the user's instance, leave its settings as we found them.
   try { $origAlerts = $app.DisplayAlerts; $app.DisplayAlerts = 1 } catch {}
 
   # Open(FileName, ReadOnly=msoTrue, Untitled=msoFalse, WithWindow=msoFalse)
   $pres = $app.Presentations.Open($local, -1, 0, 0)
+  Write-Output 'STATUS=OPENED'
 
   $n = $pres.Slides.Count
   $w = [math]::Round($pres.PageSetup.SlideWidth, 1)
