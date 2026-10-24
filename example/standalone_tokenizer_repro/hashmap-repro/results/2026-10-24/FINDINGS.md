@@ -8,7 +8,8 @@
 1. **差距在查询探测路径**，不在 SipHash 算术（hash-only 17.2 vs 18.5 cyc）、不在插入（50.6 vs 43.5）、也不在扩容迁移（6.45M vs 7.36M cyc）。
 2. **表能驻留 L2 时差距很小**（1.11–1.17×）；**表超过约 1.3 MiB L2 后升到 1.39–1.46×**（n=65k/131k）。
 3. **机制**：每查询 L2 refill 从 0.65 增到 1.36；TLB walk ≤0.05/query（排除）；THP 未覆盖该表；ARM 的并发 miss 扩展略弱（K=16 时 9.5× vs 11.2×），与 L2 miss 成本叠加。
-4. **真实负载占比**：ARM 上 offset 表相关约 **8%–12%**（`encode` 36.29 ms vs `encode_batch_fast` 31.97 ms）；它解释查询路径为何慢，但不单独解释 38% 的端到端差距。
+4. **IPC**：同一 get 路径 ARM 92 instr / 64.7 cyc（IPC 1.42），x86 127 instr / 48.9 cyc（IPC ≈2.6）；ARM 指令更少但 IPC 更低。
+5. **真实负载占比**：ARM 上 offset 表相关约 **8%–12%**（`encode` 36.29 ms vs `encode_batch_fast` 31.97 ms）；它解释查询路径为何慢，但不单独解释 38% 的端到端差距。
 
 ## 1. 问题与复现
 
@@ -91,9 +92,17 @@ n 扫描（std, reserve）：
 
 ### 3.6 ARM 侧 IPC 与事件
 
-- hashbrown 查询路径（526,400 次 get，perf）：约 **63 cycles、96–110 instructions、IPC ≈ 1.6**；
-- 每查询 L2D_CACHE_REFILL：std ≈ 2.0、identity ≈ 0.83；L1D_TLB_REFILL：std ≈ 3.15、identity ≈ 0.37；
-- 后端 stall 占周期约 60%。
+用 `--query-repeat 10 / 20` 两次运行相减（同一偏移表，解析与建表开销抵消）：
+
+| 每 get | ARM（perf） | x86（Ir 差值 / 估算周期） |
+|---|---:|---:|
+| cycles | **64.7**（实测） | **48.9**（墙钟 × 4.45 GHz） |
+| instructions | **92.1**（实测） | **127.1**（Valgrind Ir 差值，guest 指令） |
+| IPC | **1.42** | **≈2.6** |
+
+- ARM 每条 get 的**指令更少**（92 vs 127），但**周期更多**（64.7 vs 48.9），所以 **IPC 低约 1.8×**：差距是执行效率/停顿，不是“干了更多活”。
+- x86 IPC 依赖频率标定（±3%）：f=4.2/4.6 GHz 时 IPC≈2.5–2.8。
+- 每查询 L2D_CACHE_REFILL：std ≈ 2.0、identity ≈ 0.83；L1D_TLB_REFILL：std ≈ 3.15、identity ≈ 0.37；后端 stall 占周期约 60%。
 
 ### 3.7 ARM 事件归因：L2 refill 随表增大，TLB walk 可忽略
 
