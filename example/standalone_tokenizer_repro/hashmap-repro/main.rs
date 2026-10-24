@@ -81,6 +81,7 @@ struct Args {
     stride: usize,
     query_file: Option<String>,
     query_repeat: usize,
+    capacity: Option<usize>,
 }
 
 fn die(msg: &str) -> ! {
@@ -99,6 +100,7 @@ fn parse_args() -> Args {
         stride: 1,
         query_file: None,
         query_repeat: 1,
+        capacity: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -118,6 +120,7 @@ fn parse_args() -> Args {
             "--stride" => a.stride = v.parse().unwrap_or_else(|_| die("bad --stride")),
             "--query-file" => a.query_file = Some(v),
             "--query-repeat" => a.query_repeat = v.parse().unwrap_or_else(|_| die("bad --query-repeat")),
+            "--capacity" => a.capacity = Some(v.parse().unwrap_or_else(|_| die("bad --capacity"))),
             other => die(&format!("unknown flag {other}")),
         }
     }
@@ -141,8 +144,9 @@ fn bench<S: std::hash::BuildHasher + Default>(
         let measured = r >= a.warmup;
 
         let t0 = Instant::now();
+        let cap = a.capacity.unwrap_or(a.n);
         let mut m: HashMap<usize, usize, S> = if a.reserve {
-            HashMap::with_capacity_and_hasher(a.n, S::default())
+            HashMap::with_capacity_and_hasher(cap, S::default())
         } else {
             HashMap::with_hasher(S::default())
         };
@@ -198,7 +202,7 @@ fn main() {
             .join(",")
     };
     println!(
-        "{{\"arch\":\"{}\",\"mode\":\"{}\",\"hasher\":\"{}\",\"n\":{},\"reps\":{},\"warmup\":{},\"reserve\":{},\"stride\":{},\"queries\":{},\"build_ns\":[{}],\"query_ns\":[{}],\"drop_ns\":[{}]}}",
+        "{{\"arch\":\"{}\",\"mode\":\"{}\",\"hasher\":\"{}\",\"n\":{},\"reps\":{},\"warmup\":{},\"reserve\":{},\"capacity\":{},\"stride\":{},\"queries\":{},\"build_ns\":[{}],\"query_ns\":[{}],\"drop_ns\":[{}]}}",
         std::env::consts::ARCH,
         a.mode,
         a.hasher,
@@ -206,6 +210,7 @@ fn main() {
         a.reps,
         a.warmup,
         a.reserve,
+        a.capacity.unwrap_or(a.n),
         a.stride,
         queries.len(),
         js(&build),
