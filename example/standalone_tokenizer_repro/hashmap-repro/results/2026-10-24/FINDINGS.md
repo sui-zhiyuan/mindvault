@@ -1,7 +1,14 @@
-# ARM vs x86：HashMap 查询路径为什么慢（中间报告）
+# ARM vs x86：HashMap 查询路径为什么慢（结论报告 v1）
 
 > 日期：2026-10-24｜约束：**不把 HashMap 改成 Vec**｜机器：ARM `192.168.41.50`（2.9 GHz 固定）vs WSL x86（i7-12700，~4.45 GHz 标定）
-> 状态：**中间报告，未定论**。x86 无硬件 PMU，IPC 只有 ARM 侧实测；其余结论均有原始数据支撑。
+> 状态：**结论报告 v1**。x86 无硬件 PMU，IPC 只有 ARM 侧实测；其余结论均有原始数据支撑。
+
+## 结论摘要
+
+1. **差距在查询探测路径**，不在 SipHash 算术（hash-only 17.2 vs 18.5 cyc）、不在插入（50.6 vs 43.5）、也不在扩容迁移（6.45M vs 7.36M cyc）。
+2. **表能驻留 L2 时差距很小**（1.11–1.17×）；**表超过约 1.3 MiB L2 后升到 1.39–1.46×**（n=65k/131k）。
+3. **机制**：每查询 L2 refill 从 0.65 增到 1.36；TLB walk ≤0.05/query（排除）；THP 未覆盖该表；ARM 的并发 miss 扩展略弱（K=16 时 9.5× vs 11.2×），与 L2 miss 成本叠加。
+4. **真实负载占比**：ARM 上 offset 表相关约 **8%–12%**（`encode` 36.29 ms vs `encode_batch_fast` 31.97 ms）；它解释查询路径为何慢，但不单独解释 38% 的端到端差距。
 
 ## 1. 问题与复现
 
@@ -113,6 +120,21 @@ perf（13 轮 = 3 warmup + 10 reps；std，reserve）：
 
 单链延迟 cycles 只差 ~1.2–1.4×，但高并发时 ARM 的扩展差 ~15%，与查询在 L2 之外 1.4–1.5× 的方向一致；两个因素叠加，暂不能精确拆账。
 
+### 3.9 真实 tokenizer 的占比（ARM 实测）
+
+同一 fixture，stock wheel（tokenizers 0.21.4 / transformers 4.48.3），ARM 2.9 GHz：
+
+| 调用 | p50 | tokens | 说明 |
+|---|---:|---:|---|
+| `encode(text)` | **36.29 ms** | 25,600 | 走 `OffsetType::Char`，建表 + 逐 token 转换 |
+| `encode_batch_fast([text])` | **31.97 ms** | 25,600（ids 相同） | 跳过 offset 转换路径 |
+
+差值 **4.32 ms ≈ encode 的 11.9%**，是真实负载里 offset 映射相关开销的上界。最小复现的模型估算为：插入 78,960 × 50.6 cyc + 查询 51,200 × 68 cyc ≈ 7.5M cycles ≈ 2.6 ms，与同一量级（真实负载还叠加缓存污染与 offset 传播）。
+
+含义：HashMap offset 表在 ARM 上约占 encode 的 **8%–12%**；这解释了最小用例能复现“查询路径更慢”，但**不能单独解释 38% 的端到端差距**——其余来自分配器、NFC/正则/BPE 等阶段（旧报告采样也指向同一方向）。
+
+原始输出：[`real/arm.json`](real/arm.json)；脚本 [`real/bench.py`](real/bench.py)。
+
 ## 4. 能说的与不能说的
 
 **能说**
@@ -126,7 +148,7 @@ perf（13 轮 = 3 warmup + 10 reps；std，reserve）：
 
 - 不能给出跨架构 IPC 对比：x86 无 PMU，instructions/IPC 缺失；
 - 不能把差距全归给 TLB：TLB refill 计数高，但 chase 曲线不支持“内存延迟更差”；
-- 不能外推到真实 tokenizer 全流程：本复现只覆盖 offset 映射这一张表（旧报告称 offset/hashbrown 路径并集约占 ARM 采样周期 25%），NFC/正则/BPE/分配器不在内；
+- 不能外推到真实 tokenizer 全流程：本复现只覆盖 offset 映射这一张表；ARM 实测该表相关开销约占 encode 的 8%–12%（`encode` 36.29 ms vs `encode_batch_fast` 31.97 ms），NFC/正则/BPE/分配器不在内；
 - 不能声称已在生产配置下验证（单机、热表、单线程）。
 
 ## 5. 尚待解释
