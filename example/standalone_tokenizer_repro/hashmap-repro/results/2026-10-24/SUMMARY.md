@@ -1,3 +1,5 @@
+> 注意：本文是最早的 baseline（旧二进制、旧口径）。后续修正与最终数值见 [`v2/README.md`](v2/README.md) 与 [`FINDINGS.md`](FINDINGS.md)。
+
 # HashMap 最小复现：2026-10-24 基线（已按复核意见修正）
 
 ## 已核验的源码事实

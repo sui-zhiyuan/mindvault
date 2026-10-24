@@ -10,7 +10,8 @@ standalone_tokenizer_repro/
 ├── repro/            可运行复现包：源码、tokenizer 资产、两机历史结果
 ├── sve-wide/         实验：标准库 hashbrown 宽组 SVE（结论：负收益，保留 NEON8）
 ├── optimization/     方案：HashMap→Vec + LTO + native（结论：−30%，输出逐字节不变）
-└── ipc-rootcause/    分析：Top-down 根因（分配器、SipHash 写读形态、依赖链）
+├── ipc-rootcause/    分析：Top-down 根因（分配器、SipHash 写读形态、依赖链）
+└── hashmap-repro/    最小 HashMap 复现：保留 HashMap，定位查询路径的 L2/MLP 差距（2026-10-24）
 ```
 
 ## 四组工作一览
