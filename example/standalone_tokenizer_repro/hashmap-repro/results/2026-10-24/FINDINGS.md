@@ -15,7 +15,7 @@
 
 真实热点：`tokenizers` 的 `BytesToCharOffsetConverter` 对 UTF-8 **每个字节**建一张 `HashMap<usize,usize>`（本输入 78,960 条），再对**每个 token** 调 `convert()`；`convert` 做 2 次 `get`（start/end），25,600 tokens ≈ **51,200 次 get**。`encode()` 硬编码 `OffsetType::Char`（`tokenizers/src/tokenizer/mod.rs:881`），所以即使不请求 offsets 也会建表。
 
-最小复现 [`hashmap-repro/main.rs`](../main.rs)：稠密插入 0..n，再按偏移查询；三个 hasher：
+最小复现 [`hashmap-repro/main.rs`](../../main.rs)：稠密插入 0..n，再按偏移查询；三个 hasher：
 
 - `std`：`RandomState`（SipHash-1-3），真实配置；
 - `mix`：splitmix 风格 usize 哈希，近随机桶布局，用来扣除 SipHash 算术；

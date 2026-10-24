@@ -1,6 +1,6 @@
 # hashmap-repro — 最小 HashMap 复现
 
-对应案例：[长文本 tokenizer 的 ARM 性能差距](../../README.md)。
+对应案例：[长文本 tokenizer 的 ARM 性能差距](../README.md)。
 目标：在不把 `HashMap` 改成 `Vec` 的前提下，复现并定位 ARM 相对 x86 的查询路径差距。
 
 ## 文件
