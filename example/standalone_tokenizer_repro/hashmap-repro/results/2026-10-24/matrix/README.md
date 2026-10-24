@@ -50,3 +50,15 @@ n=78,960，warmup=3，15 reps 中位数；ARM 固定 2.9 GHz，x86 按 4.45 GHz 
 - `arm/`、`x86/`：六组矩阵 JSON；
 - `../arm/hash_only.json`、`../x86/hash_only.json`：hash-only 原始样本；
 - 命令见 [`../commands.md`](../commands.md)。
+
+## token-like 查询模式（2026-10-24 追加）
+
+真实 `convert()` 每个 token 取 start/end 两次，token 平均间隔约 3.1 字节。用 `--query-file` 生成 52,640 个偏移（每 3 字节取 start 与 start+2），5 个独立进程 × 15 reps：
+
+| hasher | ARM (cyc/q) | x86 (cyc/q, 估) | 比值 |
+|---|---:|---:|---:|
+| std | 71.2 | 48.0 | 1.48 |
+| mix | 30.6 | 16.3 | 1.88 |
+| identity | 8.8 | 6.6 | 1.35 |
+
+与 stride=1 的结论一致：查询比约 1.5×（std）/ 1.9×（mix），顺序布局的 identity 仅 1.35×。说明差距不随查询次数或“顺序 vs 均匀步进”改变，主要跟随桶布局的随机性。

@@ -14,6 +14,7 @@
 //
 // Usage:  ./hashmap_repro [--n 78960] [--reps 15] [--warmup 3]
 //                        [--hasher std|mix|identity] [--reserve] [--stride 1]
+//                        [--query-file offsets.txt]  (whitespace-separated byte offsets)
 // Output: one JSON line with build/query/drop timings (ns) per rep.
 
 use std::collections::HashMap;
@@ -78,6 +79,7 @@ struct Args {
     hasher: String,
     reserve: bool,
     stride: usize,
+    query_file: Option<String>,
 }
 
 fn die(msg: &str) -> ! {
@@ -94,6 +96,7 @@ fn parse_args() -> Args {
         hasher: "std".into(),
         reserve: false,
         stride: 1,
+        query_file: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -111,6 +114,7 @@ fn parse_args() -> Args {
             "--warmup" => a.warmup = v.parse().unwrap_or_else(|_| die("bad --warmup")),
             "--hasher" => a.hasher = v,
             "--stride" => a.stride = v.parse().unwrap_or_else(|_| die("bad --stride")),
+            "--query-file" => a.query_file = Some(v),
             other => die(&format!("unknown flag {other}")),
         }
     }
@@ -125,6 +129,7 @@ fn parse_args() -> Args {
 
 fn bench<S: std::hash::BuildHasher + Default>(
     a: &Args,
+    queries: &[usize],
     build: &mut Vec<u128>,
     query: &mut Vec<u128>,
     drop_t: &mut Vec<u128>,
@@ -144,10 +149,8 @@ fn bench<S: std::hash::BuildHasher + Default>(
         let t1 = Instant::now();
 
         let mut acc = 0usize;
-        let mut k = 0;
-        while k < a.n {
+        for &k in queries {
             acc = acc.wrapping_add(*black_box(m.get(&k)).unwrap_or(&0));
-            k += a.stride;
         }
         let t2 = Instant::now();
 
@@ -165,13 +168,22 @@ fn bench<S: std::hash::BuildHasher + Default>(
 
 fn main() {
     let a = parse_args();
+    let queries: Vec<usize> = match &a.query_file {
+        Some(path) => {
+            let text = std::fs::read_to_string(path).unwrap_or_else(|e| die(&format!("read {path}: {e}")));
+            text.split_whitespace()
+                .map(|t| t.parse().unwrap_or_else(|_| die(&format!("bad offset {t}"))))
+                .collect()
+        }
+        None => (0..a.n).step_by(a.stride).collect(),
+    };
     let mut build = Vec::new();
     let mut query = Vec::new();
     let mut drop_t = Vec::new();
     match a.hasher.as_str() {
-        "std" => bench::<std::collections::hash_map::RandomState>(&a, &mut build, &mut query, &mut drop_t),
-        "mix" => bench::<BuildHasherDefault<MixHasher>>(&a, &mut build, &mut query, &mut drop_t),
-        "identity" => bench::<BuildHasherDefault<IdHasher>>(&a, &mut build, &mut query, &mut drop_t),
+        "std" => bench::<std::collections::hash_map::RandomState>(&a, &queries, &mut build, &mut query, &mut drop_t),
+        "mix" => bench::<BuildHasherDefault<MixHasher>>(&a, &queries, &mut build, &mut query, &mut drop_t),
+        "identity" => bench::<BuildHasherDefault<IdHasher>>(&a, &queries, &mut build, &mut query, &mut drop_t),
         other => die(&format!("unknown hasher {other}")),
     }
     let js = |v: &[u128]| {
@@ -181,7 +193,7 @@ fn main() {
             .join(",")
     };
     println!(
-        "{{\"arch\":\"{}\",\"mode\":\"{}\",\"hasher\":\"{}\",\"n\":{},\"reps\":{},\"warmup\":{},\"reserve\":{},\"stride\":{},\"build_ns\":[{}],\"query_ns\":[{}],\"drop_ns\":[{}]}}",
+        "{{\"arch\":\"{}\",\"mode\":\"{}\",\"hasher\":\"{}\",\"n\":{},\"reps\":{},\"warmup\":{},\"reserve\":{},\"stride\":{},\"queries\":{},\"build_ns\":[{}],\"query_ns\":[{}],\"drop_ns\":[{}]}}",
         std::env::consts::ARCH,
         a.mode,
         a.hasher,
@@ -190,6 +202,7 @@ fn main() {
         a.warmup,
         a.reserve,
         a.stride,
+        queries.len(),
         js(&build),
         js(&query),
         js(&drop_t)
