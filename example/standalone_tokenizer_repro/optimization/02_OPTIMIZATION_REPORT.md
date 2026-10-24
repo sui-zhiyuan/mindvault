@@ -221,7 +221,7 @@ cd /tmp/tokenizers-opt/bindings/python && maturin build --release --out /tmp/whe
 
 ---
 
-## 9. 产物索引（本目录 `dsh_result/` 内）
+## 9. 产物索引（本目录 `optimization/` 内）
 
 | 路径 | 内容 |
 |---|---|
@@ -247,7 +247,7 @@ cd /tmp/tokenizers-opt/bindings/python && maturin build --release --out /tmp/whe
 | `measurements/perf/` | .50 火焰图（SVG + 折叠栈）+ .51 归档 perf 报告（对照用） |
 | `logs/` | 全部过程日志；逐文件说明见 `logs/INDEX.md` |
 
-> 说明：归档方自己的 SVE 宽组报告仍在 `results/other_updates/wide_sve_results.md`，本目录只复制了它的 perf 归因报告（`measurements/perf/archive-51-report-demangled.txt`）用于成本结构对照。
+> 说明：归档方自己的 SVE 宽组报告仍在 `../sve-wide/wide_sve_results.md`，本目录只复制了它的 perf 归因报告（`measurements/perf/archive-51-report-demangled.txt`）用于成本结构对照。
 
 ## 10. 附录：SVE 宽组证伪数据（方案 8）
 

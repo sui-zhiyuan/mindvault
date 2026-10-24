@@ -23,4 +23,4 @@
 
 
 ## 宽组实验已完成（2026-09-24）
-仅修改 std 内部 hashbrown 0.17.1，固定 Rust 1.98.1；NEON8/NEON16/SVE16-fused/SVE32-fused/SVE32-fused-private 的微测、库测试、原版 tokenizer 端到端及独立审查完成。15120 次正式调用通过校验，本地重算全部配对统计及区间一致。高占用率 miss 微测最多减少 64.75% 耗时，最终 SVE 端到端耗时增加约 2.4%～5.1%，建议当前负载保留 NEON8。完整报告：wide/wide_sve_results.md。
+仅修改 std 内部 hashbrown 0.17.1，固定 Rust 1.98.1；NEON8/NEON16/SVE16-fused/SVE32-fused/SVE32-fused-private 的微测、库测试、原版 tokenizer 端到端及独立审查完成。15120 次正式调用通过校验，本地重算全部配对统计及区间一致。高占用率 miss 微测最多减少 64.75% 耗时，最终 SVE 端到端耗时增加约 2.4%～5.1%，建议当前负载保留 NEON8。完整报告：wide_sve_results.md。

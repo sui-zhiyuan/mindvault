@@ -1,17 +1,17 @@
 # 出处与归属：哪些来自他人归档，哪些来自本轮
 
 > 目的：把"归档已有的诊断"与"本轮提出的方案/实测"分清，避免把别人的观察或自己的工作记错账。
-> 核对方式：对 `results/other_updates/`（他人归档）全文检索关键词，逐条对到原文行号。
+> 核对方式：对 `../sve-wide/`（他人归档）全文检索关键词，逐条对到原文行号。
 
-## 一、他人归档（`results/other_updates/`）已有的内容
+## 一、他人归档（`../sve-wide/`）已有的内容
 
 | 内容 | 出处 | 说明 |
 |---|---|---|
-| **诊断**：hashbrown 的 `reserve_rehash`/`insert` 成本主要来自 `BytesToCharOffsetConverter` 逐 UTF-8 字节建表 | `wide/progress.md:12` | 与本轮独立剖析结论一致 |
-| **观测**：malloc/free、正则、offset 转换也占明显成本 | `wide_sve_results.md:65` | 仅作**归因提示**，原文明确写"不等同于精确可优化时间比例"；**未**据此提出任何分配器方案 |
-| **实验**：std 内 hashbrown 宽组（NEON8/NEON16/SVE16/SVE32/private）的微测与端到端 | `wide/`、`wide_sve_results.md` | 本轮在 .50 上复现了它的主结论（SVE 更慢），并补齐了它未测的项 |
-| **结论**：建议保留 NEON8 | `wide_sve_results.md` | 与本轮复现一致 |
-| **脚本**：配对 bootstrap（`paired_stats.py`）、`run_with_vl.py`、微基准 `micro` crate、`run_e2e.py`/`run_micro.py` 框架 | `wide/scripts/`、`shared/scripts/` | 本轮的配对设计、VL 固定方式、微测用例均是复用/扩展这套 |
+| **诊断**：hashbrown 的 `reserve_rehash`/`insert` 成本主要来自 `BytesToCharOffsetConverter` 逐 UTF-8 字节建表 | `../sve-wide/progress.md:12` | 与本轮独立剖析结论一致 |
+| **观测**：malloc/free、正则、offset 转换也占明显成本 | `../sve-wide/wide_sve_results.md:65` | 仅作**归因提示**，原文明确写"不等同于精确可优化时间比例"；**未**据此提出任何分配器方案 |
+| **实验**：std 内 hashbrown 宽组（NEON8/NEON16/SVE16/SVE32/private）的微测与端到端 | `../sve-wide/`、`../sve-wide/wide_sve_results.md` | 本轮在 .50 上复现了它的主结论（SVE 更慢），并补齐了它未测的项 |
+| **结论**：建议保留 NEON8 | `../sve-wide/wide_sve_results.md` | 与本轮复现一致 |
+| **脚本**：配对 bootstrap（`paired_stats.py`）、`run_with_vl.py`、微基准 `micro` crate、`run_e2e.py`/`run_micro.py` 框架 | `../sve-wide/scripts/` | 本轮的配对设计、VL 固定方式、微测用例均是复用/扩展这套（原 `wide/scripts/` 与 `shared/scripts/` 已合并到该目录） |
 
 检索结果：归档里搜 `jemalloc|mimalloc|tcmalloc|global_allocator|LD_PRELOAD` = **0 命中**；搜 `Vec<u32>`/前缀和/数组替代 = **0 命中**；构建脚本一律 `-Ctarget-cpu=generic -Ctarget-feature=+sve`，**没有** LTO / native / llvm-args。
 
