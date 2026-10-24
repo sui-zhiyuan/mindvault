@@ -99,13 +99,14 @@ n 扫描（std, reserve）：
 
 perf（13 轮 = 3 warmup + 10 reps；std，reserve）：
 
-| n | L2D refill / query | L3D refill / query | DTLB walk / query |
+| n | L2D refill / (插入+查询) | L3D refill / op | DTLB walk / op |
 |---:|---:|---:|---:|
-| 4,096 | 0.65 | 0.13 | 0.05 |
-| 78,960 | 1.36 | 0.09 | 0.01 |
+| 4,096 | 0.33 | 0.065 | 0.025 |
+| 78,960 | 0.68 | 0.047 | 0.006 |
 
-- **TLB walk 可忽略**（≤0.05/query）；L3 refill 也低（~0.1/query）；
-- 每查询 L2 refill 从 0.65 增到 1.36，与“表超过 L2 后差距从 1.11× 升到 1.46×”同步；
+- 计数区域是 13 轮（3 warmup + 10 reps），包含插入与查询；按“每操作”归一（除以 13×(n 插入 + n 查询)）。
+- **TLB walk 可忽略**（每查询约 0.01–0.05）；L3 refill 也低（≤0.07/op）；
+- 每操作 L2 refill 从 0.33 增到 0.68，与“表超过 L2 后差距从 1.11× 升到 1.46×”同步；
 - THP=always，但本进程哈希表映射的 `AnonHugePages: 0`，**表并未被大页覆盖**，不存在 ARM 大页优势。
 
 ### 3.8 并发 miss（MLP）：ARM 扩展略弱
