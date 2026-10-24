@@ -1,6 +1,7 @@
 # optimization — 长文本 tokenizer 优化：优化点、测试结果与过程日志
 
 > 生成：2026-09-28
+> 归档位置：`example/standalone_tokenizer_repro/optimization/`；案例总览见 [`../README.md`](../README.md)。
 > 对象负载：`example/standalone_tokenizer_repro`（Qwen2.5-0.5B fast tokenizer，batch=1，58,834 字符 / 78,960 字节 / 25,600 tokens）
 > **范围声明**：优化目标只有 **aarch64 生产环境**（`192.168.41.50`）。目录中的 x86 数值**仅是"原始案例 aarch64 比 x86 慢 39%"这一对照所需**，以及用于排除工具链污染的机制验证；**本轮不追求也不评估 x86 侧的优化量**。
 >
