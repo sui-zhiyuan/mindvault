@@ -80,6 +80,7 @@ struct Args {
     reserve: bool,
     stride: usize,
     query_file: Option<String>,
+    query_repeat: usize,
 }
 
 fn die(msg: &str) -> ! {
@@ -97,6 +98,7 @@ fn parse_args() -> Args {
         reserve: false,
         stride: 1,
         query_file: None,
+        query_repeat: 1,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -115,6 +117,7 @@ fn parse_args() -> Args {
             "--hasher" => a.hasher = v,
             "--stride" => a.stride = v.parse().unwrap_or_else(|_| die("bad --stride")),
             "--query-file" => a.query_file = Some(v),
+            "--query-repeat" => a.query_repeat = v.parse().unwrap_or_else(|_| die("bad --query-repeat")),
             other => die(&format!("unknown flag {other}")),
         }
     }
@@ -149,8 +152,10 @@ fn bench<S: std::hash::BuildHasher + Default>(
         let t1 = Instant::now();
 
         let mut acc = 0usize;
-        for &k in queries {
-            acc = acc.wrapping_add(*black_box(m.get(&k)).unwrap_or(&0));
+        for _ in 0..a.query_repeat {
+            for &k in queries {
+                acc = acc.wrapping_add(*black_box(m.get(&k)).unwrap_or(&0));
+            }
         }
         let t2 = Instant::now();
 
