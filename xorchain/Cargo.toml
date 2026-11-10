@@ -16,4 +16,6 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-getrandom = "0.3"
+# 0.3 uses raw-dylib on Windows, which requires dlltool.exe on -gnu
+# toolchains. 0.2 uses normal Windows import libraries instead.
+getrandom = "0.2"

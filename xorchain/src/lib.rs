@@ -23,7 +23,7 @@ pub const BLOCK_SIZE: usize = 8;
 /// The function streams the input and uses O(1) memory.
 pub fn encode<R: Read, W: Write>(src: &mut R, dst: &mut W) -> io::Result<()> {
     let mut r0 = [0u8; BLOCK_SIZE];
-    getrandom::fill(&mut r0)
+    getrandom::getrandom(&mut r0)
         .map_err(|err| io::Error::other(format!("failed to generate R0: {err}")))?;
     encode_with_r0(src, dst, &r0)
 }
