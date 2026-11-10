@@ -76,3 +76,10 @@ chmod 600 capture100.local.json
     "exclusive_template": false
   }
 }
+
+
+## 创建沙箱脚本
+
+cubemastercli tpl create-from-image --image cube-sandbox-cn.tencentcloudcr.com/cube-sandbox/sandbox-code:latest --writable-layer-size 1G --expose-port 49999 --expose-port 49983 --probe 49999
+
+90上创好的：template_id=tpl-ee1c1935e07c49d2ac95a001
