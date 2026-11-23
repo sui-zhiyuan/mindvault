@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
-use xorchain::{decode, encode};
+use xorchain::{decode, encode, DEFAULT_PERIOD};
 
 const BUFFER_SIZE: usize = 64 * 1024;
 
@@ -22,7 +22,7 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Encode a file or stream into R0 followed by the prefix-XOR chain.
+    /// Encode a file or stream into the header followed by the prefix-XOR chain.
     Encode {
         /// Input file, or "-" for stdin.
         #[arg(short, long, value_name = "FILE", default_value = "-")]
@@ -31,6 +31,10 @@ enum Command {
         /// Output file, or "-" for stdout.
         #[arg(short, long, value_name = "FILE", default_value = "-")]
         output: PathBuf,
+
+        /// Key period in bytes: the random key repeats with this period.
+        #[arg(short = 'n', long, value_name = "N", default_value_t = DEFAULT_PERIOD)]
+        period: u32,
     },
 
     /// Recover the original file or stream from encoded input.
@@ -56,12 +60,16 @@ fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Encode { input, output } => {
+        Command::Encode {
+            input,
+            output,
+            period,
+        } => {
             ensure_distinct(&input, &output)?;
             let mut src = open_input(&input)?;
             let mut dst = open_output(&output)?;
 
-            encode(&mut src, &mut dst).context("failed to encode input")?;
+            encode(&mut src, &mut dst, period).context("failed to encode input")?;
             dst.flush().context("failed to flush output")?;
         }
         Command::Decode { input, output } => {
