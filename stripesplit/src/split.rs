@@ -51,9 +51,22 @@ pub fn split(src: &Path, outdir: &Path, opts: &SplitOptions) -> Result<Index> {
     }
 
     let width = part_width(n);
-    let paths: Vec<PathBuf> = (0..n)
-        .map(|i| outdir.join(part_name(file_name, width, i)))
-        .collect();
+    let paths: Vec<PathBuf> = (0..n).map(|i| outdir.join(part_name(width, i))).collect();
+
+    // 分片名固定为 partNNNN，不再带源文件名；若源文件本身就叫 partNNNN 且输出到
+    // 同一目录，创建分片会把源文件截断，必须先拒绝。
+    let src_dir = src
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    if same_file(src_dir, outdir)
+        && part_number(file_name).is_some_and(|num| (1..=n).contains(&num))
+    {
+        bail!(
+            "输出分片会覆盖源文件：{}（源文件名形如 partNNNN，请换一个输出目录）",
+            src.display()
+        );
+    }
 
     if !opts.force {
         if index_path.exists() {
@@ -114,7 +127,7 @@ pub fn split(src: &Path, outdir: &Path, opts: &SplitOptions) -> Result<Index> {
         .into_iter()
         .enumerate()
         .map(|(j, hasher)| PartEntry {
-            name: part_name(file_name, width, j as u64),
+            name: part_name(width, j as u64),
             size: part_len(total, n, j as u64),
             sha256: format!("{:x}", hasher.finalize()),
         })
@@ -141,11 +154,21 @@ pub fn split(src: &Path, outdir: &Path, opts: &SplitOptions) -> Result<Index> {
 
 /// 分片序号位数：至少 4 位，份数更多时自动加宽。
 pub(crate) fn part_width(n: u64) -> usize {
-    n.saturating_sub(1).to_string().len().max(4)
+    n.to_string().len().max(4)
 }
 
-pub(crate) fn part_name(stem: &str, width: usize, i: u64) -> String {
-    format!("{stem}.part{i:0width$}")
+/// 分片文件名：`part0001` 起步，序号从 1 开始，不含源文件名。
+pub(crate) fn part_name(width: usize, i: u64) -> String {
+    format!("part{:0width$}", i + 1)
+}
+
+/// 解析 `partNNNN` 里的序号，用于防止分片覆盖源文件。
+fn part_number(name: &str) -> Option<u64> {
+    let digits = name.strip_prefix("part")?;
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    digits.parse().ok()
 }
 
 /// 尽量把 `buf` 填满，返回实际读到的字节数；`0` 表示读到文件尾。
@@ -193,5 +216,30 @@ impl Drop for Rollback {
         for path in &self.paths {
             let _ = fs::remove_file(path);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn part_names_are_one_based_with_fixed_width() {
+        assert_eq!(part_name(4, 0), "part0001");
+        assert_eq!(part_name(4, 1), "part0002");
+        assert_eq!(part_name(4, 999), "part1000");
+        assert_eq!(part_width(3), 4);
+        assert_eq!(part_width(1000), 4);
+        assert_eq!(part_width(10_000), 5);
+        assert_eq!(part_name(5, 9999), "part10000");
+    }
+
+    #[test]
+    fn part_number_parses_only_numeric_suffix() {
+        assert_eq!(part_number("part0001"), Some(1));
+        assert_eq!(part_number("part1000"), Some(1000));
+        assert_eq!(part_number("part"), None);
+        assert_eq!(part_number("part0001.bin"), None);
+        assert_eq!(part_number("xpart0001"), None);
     }
 }

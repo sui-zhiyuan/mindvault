@@ -133,7 +133,7 @@ fn index_toml_contains_required_fields() {
         "original_size = 64",
         "part_count = 4",
         "[[parts]]",
-        "name = \"a.bin.part0000\"",
+        "name = \"part0001\"",
         "size = 16",
         "sha256 = \"",
     ] {
@@ -357,4 +357,37 @@ fn defaults_to_one_mib_parts() {
     for part in &index.parts {
         assert!(outdir.join(&part.name).is_file());
     }
+}
+
+#[test]
+fn part_files_use_fixed_part_naming() {
+    let dir = TempDir::new("naming");
+    let data = payload(10);
+    let (_, outdir, index) = do_split(dir.path(), "a.bin", &data, 4);
+
+    let names: Vec<&str> = index.parts.iter().map(|part| part.name.as_str()).collect();
+    assert_eq!(names, ["part0001", "part0002", "part0003", "part0004"]);
+    for name in &names {
+        assert!(outdir.join(name).is_file(), "{name} 不存在");
+        assert!(!name.contains("a.bin"), "分片名不应带源文件名：{name}");
+    }
+}
+
+#[test]
+fn refuses_to_overwrite_source_named_like_a_part() {
+    let dir = TempDir::new("src-name");
+    let src = dir.path().join("part0001");
+    fs::write(&src, b"hello world").expect("写源文件失败");
+
+    let err = split(
+        &src,
+        dir.path(),
+        &SplitOptions {
+            parts: 3,
+            force: true,
+        },
+    )
+    .expect_err("源文件名与分片名冲突时应拒绝");
+    assert!(format!("{err:#}").contains("覆盖源文件"), "{err:#}");
+    assert_eq!(fs::read(&src).expect("读源文件失败"), b"hello world");
 }
