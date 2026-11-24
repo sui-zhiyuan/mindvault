@@ -1,0 +1,24 @@
+[package]
+name = "stripesplit"
+version = "0.1.0"
+edition = "2021"
+description = "Byte-interleaved file splitter with a TOML index and verified merge"
+license = "MIT"
+
+[[bin]]
+name = "stripesplit"
+path = "src/main.rs"
+
+[lib]
+name = "stripesplit"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+toml = "0.8"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
